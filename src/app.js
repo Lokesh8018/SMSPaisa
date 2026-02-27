@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
+const fs = require('fs');
 const { Server } = require('socket.io');
 
 const authRoutes = require('./routes/authRoutes');
@@ -41,6 +43,14 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
 
 setupSocketHandlers(io);
+
+const adminDistPath = path.join(__dirname, '..', 'admin', 'dist');
+if (fs.existsSync(adminDistPath)) {
+  app.use('/admin', express.static(adminDistPath));
+  app.get('/admin/*', apiRateLimit, (req, res) => {
+    res.sendFile(path.join(adminDistPath, 'index.html'));
+  });
+}
 
 app.use((req, res) => {
   errorResponse(res, 'Route not found', 'NOT_FOUND', 404);

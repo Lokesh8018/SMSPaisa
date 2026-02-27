@@ -159,4 +159,175 @@ const approveWithdrawal = async (req, res) => {
   }
 };
 
-module.exports = { listUsers, getUserById, getPlatformStats, getOnlineDevices, createSmsTask, bulkCreateSmsTasks, listWithdrawals, approveWithdrawal };
+const toggleUserActive = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!user) return errorResponse(res, 'User not found', 'NOT_FOUND', 404);
+
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { isActive: !user.isActive },
+    });
+
+    return successResponse(res, { user: updated });
+  } catch (err) {
+    console.error('toggleUserActive error:', err);
+    return errorResponse(res, 'Failed to toggle user active status', 'SERVER_ERROR', 500);
+  }
+};
+
+const changeUserRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (req.user.id === req.params.id) {
+      return errorResponse(res, 'Cannot change your own role', 'VALIDATION_ERROR', 422);
+    }
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!user) return errorResponse(res, 'User not found', 'NOT_FOUND', 404);
+
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { role },
+    });
+
+    return successResponse(res, { user: updated });
+  } catch (err) {
+    console.error('changeUserRole error:', err);
+    return errorResponse(res, 'Failed to change user role', 'SERVER_ERROR', 500);
+  }
+};
+
+const rejectWithdrawal = async (req, res) => {
+  try {
+    const transaction = await prisma.transaction.findUnique({ where: { id: req.params.id } });
+    if (!transaction) return errorResponse(res, 'Transaction not found', 'NOT_FOUND', 404);
+    if (transaction.status !== 'PENDING') {
+      return errorResponse(res, 'Transaction is not pending', 'VALIDATION_ERROR', 422);
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.wallet.update({
+        where: { userId: transaction.userId },
+        data: {
+          balance: { increment: transaction.amount },
+          totalWithdrawn: { decrement: transaction.amount },
+        },
+      });
+      return tx.transaction.update({
+        where: { id: req.params.id },
+        data: { status: 'FAILED' },
+      });
+    });
+
+    return successResponse(res, { transaction: updated });
+  } catch (err) {
+    console.error('rejectWithdrawal error:', err);
+    return errorResponse(res, 'Failed to reject withdrawal', 'SERVER_ERROR', 500);
+  }
+};
+
+const listSmsTasks = async (req, res) => {
+  try {
+    const { page, limit, skip, take } = paginate(req.query.page, req.query.limit);
+    const { status } = req.query;
+
+    const where = {};
+    if (status) where.status = status;
+
+    const [tasks, total] = await Promise.all([
+      prisma.smsTask.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+        include: { assignedTo: { select: { id: true, phone: true } } },
+      }),
+      prisma.smsTask.count({ where }),
+    ]);
+
+    return successResponse(res, { tasks, pagination: paginationMeta(total, page, limit) });
+  } catch (err) {
+    console.error('listSmsTasks error:', err);
+    return errorResponse(res, 'Failed to list SMS tasks', 'SERVER_ERROR', 500);
+  }
+};
+
+const listSmsLogs = async (req, res) => {
+  try {
+    const { page, limit, skip, take } = paginate(req.query.page, req.query.limit);
+    const { status } = req.query;
+
+    const where = {};
+    if (status) where.status = status;
+
+    const [logs, total] = await Promise.all([
+      prisma.smsLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+        include: {
+          user: { select: { id: true, phone: true } },
+          task: { select: { id: true, recipient: true, message: true } },
+        },
+      }),
+      prisma.smsLog.count({ where }),
+    ]);
+
+    return successResponse(res, { logs, pagination: paginationMeta(total, page, limit) });
+  } catch (err) {
+    console.error('listSmsLogs error:', err);
+    return errorResponse(res, 'Failed to list SMS logs', 'SERVER_ERROR', 500);
+  }
+};
+
+const deleteUser = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!user) return errorResponse(res, 'User not found', 'NOT_FOUND', 404);
+
+    await prisma.user.update({
+      where: { id: req.params.id },
+      data: { isActive: false },
+    });
+
+    return successResponse(res, { message: 'User deleted successfully' });
+  } catch (err) {
+    console.error('deleteUser error:', err);
+    return errorResponse(res, 'Failed to delete user', 'SERVER_ERROR', 500);
+  }
+};
+
+const listTransactions = async (req, res) => {
+  try {
+    const { page, limit, skip, take } = paginate(req.query.page, req.query.limit);
+    const { type, status } = req.query;
+
+    const where = {};
+    if (type) where.type = type;
+    if (status) where.status = status;
+
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+        include: { user: { select: { id: true, phone: true } } },
+      }),
+      prisma.transaction.count({ where }),
+    ]);
+
+    return successResponse(res, { transactions, pagination: paginationMeta(total, page, limit) });
+  } catch (err) {
+    console.error('listTransactions error:', err);
+    return errorResponse(res, 'Failed to list transactions', 'SERVER_ERROR', 500);
+  }
+};
+
+module.exports = {
+  listUsers, getUserById, getPlatformStats, getOnlineDevices,
+  createSmsTask, bulkCreateSmsTasks, listWithdrawals, approveWithdrawal,
+  toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
+  listSmsLogs, deleteUser, listTransactions,
+};
