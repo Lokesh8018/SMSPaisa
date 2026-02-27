@@ -1,0 +1,84 @@
+package com.smspaisa.app.data.repository
+
+import com.smspaisa.app.data.api.ApiService
+import com.smspaisa.app.data.api.AuthResponse
+import com.smspaisa.app.data.api.SendOtpRequest
+import com.smspaisa.app.data.api.UpdateProfileRequest
+import com.smspaisa.app.data.api.VerifyOtpRequest
+import com.smspaisa.app.data.datastore.UserPreferences
+import com.smspaisa.app.model.ApiResponse
+import com.smspaisa.app.model.User
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class AuthRepository @Inject constructor(
+    private val apiService: ApiService,
+    private val userPreferences: UserPreferences
+) {
+    suspend fun sendOtp(phone: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.sendOtp(SendOtpRequest(phone))
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(response.body()?.data?.message ?: "OTP sent")
+            } else {
+                Result.failure(Exception(response.body()?.error?.message ?: "Failed to send OTP"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun verifyOtp(phone: String, otp: String, firebaseToken: String): Result<AuthResponse> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.verifyOtp(VerifyOtpRequest(phone, otp, firebaseToken))
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val authResponse = response.body()!!.data!!
+                    userPreferences.saveAuthToken(authResponse.token)
+                    userPreferences.saveUser(
+                        authResponse.user.id,
+                        authResponse.user.name,
+                        authResponse.user.phone
+                    )
+                    Result.success(authResponse)
+                } else {
+                    Result.failure(Exception(response.body()?.error?.message ?: "OTP verification failed"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    suspend fun getProfile(): Result<User> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.getProfile()
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(response.body()!!.data!!)
+            } else {
+                Result.failure(Exception(response.body()?.error?.message ?: "Failed to get profile"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateProfile(name: String?, email: String?): Result<User> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.updateProfile(UpdateProfileRequest(name, email))
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(response.body()!!.data!!)
+            } else {
+                Result.failure(Exception(response.body()?.error?.message ?: "Failed to update profile"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun logout() {
+        userPreferences.clearAll()
+    }
+}

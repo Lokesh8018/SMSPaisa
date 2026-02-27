@@ -1,0 +1,10 @@
+package com.smspaisa.app.model
+
+import com.google.gson.annotations.SerializedName
+
+data class SmsTask(
+    @SerializedName("taskId") val taskId: String,
+    @SerializedName("recipient") val recipient: String,
+    @SerializedName("message") val message: String,
+    @SerializedName("priority") val priority: Int = 1
+)

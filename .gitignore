@@ -4,3 +4,12 @@ dist/
 .DS_Store
 *.log
 prisma/migrations/
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/**/*.iml
+android/.idea/
+android/app/google-services.json
