@@ -48,11 +48,15 @@ class DeviceRepository @Inject constructor(
 
     suspend fun registerDevice(fcmToken: String? = null): Result<Device> = withContext(Dispatchers.IO) {
         try {
+            val simCount = getSimCount()
+            val simInfo = buildMap<String, Any?> {
+                put("simCount", simCount)
+                if (fcmToken != null) put("fcmToken", fcmToken)
+            }
             val request = RegisterDeviceRequest(
                 deviceId = getDeviceId(),
                 deviceName = getDeviceName(),
-                simCount = getSimCount(),
-                fcmToken = fcmToken
+                simInfo = simInfo
             )
             val response = apiService.registerDevice(request)
             if (response.isSuccessful && response.body()?.success == true) {
@@ -74,16 +78,11 @@ class DeviceRepository @Inject constructor(
         wifiOnly: Boolean? = null
     ): Result<Device> = withContext(Dispatchers.IO) {
         try {
-            val activeHours = if (activeHoursStart != null && activeHoursEnd != null) {
-                mapOf("start" to activeHoursStart, "end" to activeHoursEnd)
-            } else null
-
             val request = UpdateDeviceSettingsRequest(
+                deviceId = getDeviceId(),
                 dailyLimit = dailyLimit,
-                activeHours = activeHours,
-                preferredSim = preferredSim,
-                stopBatteryPercent = stopBatteryPercent,
-                wifiOnly = wifiOnly
+                activeHoursStart = activeHoursStart,
+                activeHoursEnd = activeHoursEnd
             )
             val response = apiService.updateDeviceSettings(request)
             if (response.isSuccessful && response.body()?.success == true) {

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.smspaisa.app.data.api.WebSocketManager
 import com.smspaisa.app.data.datastore.UserPreferences
 import com.smspaisa.app.data.repository.SmsRepository
 import com.smspaisa.app.data.repository.WalletRepository
@@ -37,6 +38,7 @@ class HomeViewModel @Inject constructor(
     private val walletRepository: WalletRepository,
     private val smsRepository: SmsRepository,
     private val userPreferences: UserPreferences,
+    private val webSocketManager: WebSocketManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -49,6 +51,16 @@ class HomeViewModel @Inject constructor(
     init {
         loadData()
         observeServiceState()
+        observeWebSocket()
+    }
+
+    private fun observeWebSocket() {
+        viewModelScope.launch {
+            webSocketManager.balanceUpdated.collect { balance ->
+                balance ?: return@collect
+                refreshBalance()
+            }
+        }
     }
 
     private fun observeServiceState() {

@@ -13,9 +13,9 @@ const getNextTask = async (req, res) => {
 
     const task = await getNextTaskForDevice(req.user.id, deviceId);
     if (!task) {
-      return successResponse(res, { task: null, message: 'No tasks available' });
+      return successResponse(res, null);
     }
-    return successResponse(res, { task });
+    return successResponse(res, task);
   } catch (err) {
     console.error('getNextTask error:', err);
     return errorResponse(res, 'Failed to get next task', 'SERVER_ERROR', 500);
@@ -88,11 +88,11 @@ const getTodayStats = async (req, res) => {
     });
 
     return successResponse(res, {
-      total,
+      sent: total,
       delivered,
       failed,
-      successRate: total > 0 ? ((delivered / total) * 100).toFixed(2) : '0.00',
-      todayEarnings: earningsResult._sum.amountEarned || 0,
+      earnings: parseFloat(earningsResult._sum.amountEarned) || 0,
+      remaining: 0,
     });
   } catch (err) {
     console.error('getTodayStats error:', err);
@@ -115,7 +115,17 @@ const getSmsLog = async (req, res) => {
       prisma.smsLog.count({ where: { userId: req.user.id } }),
     ]);
 
-    return successResponse(res, { logs, pagination: paginationMeta(total, page, limit) });
+    const flatLogs = logs.map(log => ({
+      id: log.id,
+      taskId: log.taskId,
+      recipient: log.task?.recipient || '',
+      message: log.task?.message || '',
+      status: log.status,
+      amount: parseFloat(log.amountEarned) || 0,
+      timestamp: new Date(log.createdAt).getTime(),
+    }));
+
+    return successResponse(res, flatLogs);
   } catch (err) {
     console.error('getSmsLog error:', err);
     return errorResponse(res, 'Failed to get SMS log', 'SERVER_ERROR', 500);

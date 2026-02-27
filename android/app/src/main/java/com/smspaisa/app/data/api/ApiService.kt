@@ -32,8 +32,8 @@ data class ReportStatusRequest(
 
 data class WithdrawalRequest(
     @SerializedName("amount") val amount: Double,
-    @SerializedName("method") val method: String,
-    @SerializedName("accountId") val accountId: String
+    @SerializedName("paymentMethod") val paymentMethod: String,
+    @SerializedName("paymentDetails") val paymentDetails: Map<String, String>
 )
 
 data class AddUpiRequest(
@@ -51,16 +51,14 @@ data class AddBankRequest(
 data class RegisterDeviceRequest(
     @SerializedName("deviceId") val deviceId: String,
     @SerializedName("deviceName") val deviceName: String,
-    @SerializedName("simCount") val simCount: Int,
-    @SerializedName("fcmToken") val fcmToken: String?
+    @SerializedName("simInfo") val simInfo: Map<String, Any?>?
 )
 
 data class UpdateDeviceSettingsRequest(
+    @SerializedName("deviceId") val deviceId: String,
     @SerializedName("dailyLimit") val dailyLimit: Int?,
-    @SerializedName("activeHours") val activeHours: Map<String, String>?,
-    @SerializedName("preferredSim") val preferredSim: Int?,
-    @SerializedName("stopBatteryPercent") val stopBatteryPercent: Int?,
-    @SerializedName("wifiOnly") val wifiOnly: Boolean?
+    @SerializedName("activeHoursStart") val activeHoursStart: String?,
+    @SerializedName("activeHoursEnd") val activeHoursEnd: String?
 )
 
 data class HeartbeatRequest(

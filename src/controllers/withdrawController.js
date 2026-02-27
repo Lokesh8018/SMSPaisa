@@ -61,7 +61,7 @@ const requestWithdrawal = async (req, res) => {
         where: { id: transaction.id },
         data: { status: 'COMPLETED', razorpayPayoutId: payout.id },
       });
-      return successResponse(res, { transaction: { ...transaction, status: 'COMPLETED', razorpayPayoutId: payout.id } });
+      return successResponse(res, { ...transaction, status: 'COMPLETED', razorpayPayoutId: payout.id });
     } catch (payoutErr) {
       console.error('Payout error:', payoutErr);
       await prisma.$transaction(async (tx) => {
@@ -99,7 +99,7 @@ const getWithdrawalHistory = async (req, res) => {
       prisma.transaction.count({ where: { userId: req.user.id, type: 'WITHDRAWAL' } }),
     ]);
 
-    return successResponse(res, { transactions, pagination: paginationMeta(total, page, limit) });
+    return successResponse(res, transactions);
   } catch (err) {
     console.error('getWithdrawalHistory error:', err);
     return errorResponse(res, 'Failed to get withdrawal history', 'SERVER_ERROR', 500);
@@ -108,11 +108,12 @@ const getWithdrawalHistory = async (req, res) => {
 
 const addUpi = async (req, res) => {
   try {
-    const { upi_id } = req.body;
-    if (!upi_id) return errorResponse(res, 'upi_id is required', 'VALIDATION_ERROR', 422);
+    const { upi_id, upiId } = req.body;
+    const id = upi_id || upiId;
+    if (!id) return errorResponse(res, 'upi_id is required', 'VALIDATION_ERROR', 422);
 
     // UPI ID is validated and acknowledged; pass it in paymentDetails when requesting a withdrawal
-    return successResponse(res, { message: 'UPI ID validated. Use it in withdrawal requests.', upi_id });
+    return successResponse(res, { message: 'UPI ID validated. Use it in withdrawal requests.', upi_id: id });
   } catch (err) {
     console.error('addUpi error:', err);
     return errorResponse(res, 'Failed to save UPI ID', 'SERVER_ERROR', 500);
@@ -121,7 +122,12 @@ const addUpi = async (req, res) => {
 
 const addBank = async (req, res) => {
   try {
-    const { account_number, ifsc_code, bank_name, account_holder_name } = req.body;
+    const {
+      account_number = req.body.accountNumber,
+      ifsc_code = req.body.ifsc,
+      bank_name = req.body.bankName,
+      account_holder_name = req.body.accountHolderName,
+    } = req.body;
     if (!account_number || !ifsc_code || !bank_name) {
       return errorResponse(res, 'account_number, ifsc_code, and bank_name are required', 'VALIDATION_ERROR', 422);
     }

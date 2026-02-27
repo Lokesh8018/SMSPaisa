@@ -100,14 +100,14 @@ fun ProfileScreen(
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(
-                                            text = state.user.name.firstOrNull()?.uppercaseChar()?.toString() ?: "U",
+                                            text = state.user.name?.firstOrNull()?.uppercaseChar()?.toString() ?: "U",
                                             style = MaterialTheme.typography.headlineSmall.copy(color = MaterialTheme.colorScheme.onPrimary)
                                         )
                                     }
                                 }
                                 Spacer(Modifier.width(16.dp))
                                 Column {
-                                    Text(state.user.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                    Text(state.user.name ?: "User", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                                     Text(state.user.phone, style = MaterialTheme.typography.bodySmall)
                                     state.user.email?.let {
                                         Text(it, style = MaterialTheme.typography.bodySmall)
@@ -201,7 +201,7 @@ fun ProfileScreen(
                             Column {
                                 ListItem(
                                     headlineContent = { Text("My Referral Code") },
-                                    supportingContent = { Text(state.user.referralCode) },
+                                    supportingContent = { Text(state.user.referralCode.ifEmpty { "N/A" }) },
                                     leadingContent = { Icon(Icons.Default.CardGiftcard, null) },
                                     trailingContent = {
                                         TextButton(onClick = onNavigateToReferral) { Text("View") }

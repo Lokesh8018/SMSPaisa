@@ -13,5 +13,5 @@ data class SmsLog(
 )
 
 enum class SmsStatus {
-    SENT, DELIVERED, FAILED, PENDING
+    QUEUED, ASSIGNED, SENT, DELIVERED, FAILED, PENDING
 }

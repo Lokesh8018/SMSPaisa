@@ -98,7 +98,7 @@ const setupSocketHandlers = (io) => {
 
         if (status === 'DELIVERED') {
           const { wallet } = await creditEarning(socket.user.id, taskId, amountEarned);
-          socket.emit('balance-updated', { balance: wallet.balance });
+          socket.emit('balance-updated', { balance: parseFloat(wallet.balance) });
           await checkAndPayReferralBonus(socket.user.id);
         }
       } catch (err) {

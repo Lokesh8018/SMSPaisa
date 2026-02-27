@@ -11,6 +11,7 @@ const withdrawRoutes = require('./routes/withdrawRoutes');
 const deviceRoutes = require('./routes/deviceRoutes');
 const referralRoutes = require('./routes/referralRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 const { setupSocketHandlers } = require('./websocket/socketHandler');
 const { errorResponse } = require('./utils/helpers');
 const { apiRateLimit } = require('./middleware/rateLimit');
@@ -37,6 +38,7 @@ app.use('/api/withdraw', withdrawRoutes);
 app.use('/api/device', deviceRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/stats', statsRoutes);
 
 setupSocketHandlers(io);
 
