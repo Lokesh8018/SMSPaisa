@@ -16,7 +16,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const { setupSocketHandlers } = require('./websocket/socketHandler');
 const { errorResponse } = require('./utils/helpers');
-const { apiRateLimit } = require('./middleware/rateLimit');
+const { apiRateLimit, staticRateLimit } = require('./middleware/rateLimit');
 
 const app = express();
 const server = http.createServer(app);
@@ -47,7 +47,10 @@ setupSocketHandlers(io);
 const adminDistPath = path.join(__dirname, '..', 'admin', 'dist');
 if (fs.existsSync(adminDistPath)) {
   app.use('/admin', express.static(adminDistPath));
-  app.get('/admin/*', apiRateLimit, (req, res) => {
+  app.get('/admin', staticRateLimit, (req, res) => {
+    res.sendFile(path.join(adminDistPath, 'index.html'));
+  });
+  app.get('/admin/*', staticRateLimit, (req, res) => {
     res.sendFile(path.join(adminDistPath, 'index.html'));
   });
 }

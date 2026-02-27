@@ -7,7 +7,7 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     
-    "build": "prisma generate",
+    "build": "npx prisma generate && cd admin && npm install && npm run build",
     "migrate:deploy": "prisma migrate deploy",
     
     "prisma:generate": "prisma generate",
