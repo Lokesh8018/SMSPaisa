@@ -2,6 +2,8 @@ package com.smspaisa.app.ui.screens.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,12 +17,13 @@ import com.smspaisa.app.viewmodel.AuthUiState
 import com.smspaisa.app.viewmodel.AuthViewModel
 
 @Composable
-fun LoginScreen(
+fun RegisterScreen(
     onNavigateToHome: () -> Unit,
-    onNavigateToRegister: () -> Unit,
+    onNavigateBack: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     var phoneNumber by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
 
@@ -34,28 +37,23 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(24.dp)
     ) {
-        Text(
-            text = "💸",
-            style = MaterialTheme.typography.displayMedium
-        )
+        IconButton(onClick = onNavigateBack) {
+            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "SMSPaisa",
-            style = MaterialTheme.typography.headlineLarge.copy(
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+            text = "Create Account",
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
         )
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Earn money by sending SMS",
+            text = "Register to start earning",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         Text(
             text = "Phone number",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -74,6 +72,21 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
+            text = "Email (optional)",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            modifier = Modifier.align(Alignment.Start)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Enter email address") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
             text = "Password",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
             modifier = Modifier.align(Alignment.Start)
@@ -83,7 +96,7 @@ fun LoginScreen(
             value = password,
             onValueChange = { password = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Enter password") },
+            placeholder = { Text("Minimum 8 characters") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
@@ -97,17 +110,21 @@ fun LoginScreen(
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         Button(
             onClick = {
-                if (phoneNumber.length == 10 && password.isNotEmpty()) {
-                    viewModel.login("+91$phoneNumber", password)
+                if (phoneNumber.length == 10 && password.length >= 8) {
+                    viewModel.register(
+                        "+91$phoneNumber",
+                        email.ifBlank { null },
+                        password
+                    )
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
-            enabled = phoneNumber.length == 10 && password.isNotEmpty() && uiState !is AuthUiState.Loading
+            enabled = phoneNumber.length == 10 && password.length >= 8 && uiState !is AuthUiState.Loading
         ) {
             if (uiState is AuthUiState.Loading) {
                 CircularProgressIndicator(
@@ -117,18 +134,14 @@ fun LoginScreen(
                 )
             } else {
                 Text(
-                    "Login",
+                    "Register",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onNavigateToRegister) {
-            Text("Don't have an account? Register")
-        }
-        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "By continuing, you agree to our Terms of Service and Privacy Policy",
+            text = "By registering, you agree to our Terms of Service and Privacy Policy",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             modifier = Modifier.padding(horizontal = 8.dp)

@@ -7,14 +7,16 @@ import retrofit2.http.*
 
 // --- Request bodies ---
 
-data class SendOtpRequest(
-    @SerializedName("phone") val phone: String
+data class RegisterRequest(
+    @SerializedName("phone") val phone: String,
+    @SerializedName("email") val email: String?,
+    @SerializedName("password") val password: String,
+    @SerializedName("deviceId") val deviceId: String
 )
 
-data class VerifyOtpRequest(
+data class LoginRequest(
     @SerializedName("phone") val phone: String,
-    @SerializedName("otp") val otp: String,
-    @SerializedName("firebaseToken") val firebaseToken: String
+    @SerializedName("password") val password: String
 )
 
 data class UpdateProfileRequest(
@@ -79,10 +81,6 @@ data class AuthResponse(
     @SerializedName("user") val user: User
 )
 
-data class OtpResponse(
-    @SerializedName("message") val message: String
-)
-
 data class WithdrawalResponse(
     @SerializedName("id") val id: String,
     @SerializedName("status") val status: String,
@@ -116,13 +114,13 @@ interface ApiService {
 
     // --- Auth ---
 
-    @POST("api/auth/send-otp")
-    suspend fun sendOtp(@Body request: SendOtpRequest): Response<ApiResponse<OtpResponse>>
+    @POST("api/auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<ApiResponse<AuthResponse>>
 
-    @POST("api/auth/verify-otp")
-    suspend fun verifyOtp(@Body request: VerifyOtpRequest): Response<ApiResponse<AuthResponse>>
+    @POST("api/auth/login")
+    suspend fun login(@Body request: LoginRequest): Response<ApiResponse<AuthResponse>>
 
-    @GET("api/auth/profile")
+    @GET("api/auth/me")
     suspend fun getProfile(): Response<ApiResponse<User>>
 
     @PUT("api/auth/profile")

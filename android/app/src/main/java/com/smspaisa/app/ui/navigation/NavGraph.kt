@@ -9,7 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.smspaisa.app.ui.screens.auth.LoginScreen
-import com.smspaisa.app.ui.screens.auth.OtpScreen
+import com.smspaisa.app.ui.screens.auth.RegisterScreen
 import com.smspaisa.app.ui.screens.home.HomeScreen
 import com.smspaisa.app.ui.screens.onboarding.OnboardingScreen
 import com.smspaisa.app.ui.screens.profile.ProfileScreen
@@ -21,9 +21,7 @@ import com.smspaisa.app.viewmodel.AuthViewModel
 sealed class Screen(val route: String) {
     object Onboarding : Screen("onboarding")
     object Login : Screen("login")
-    object Otp : Screen("otp/{phone}") {
-        fun createRoute(phone: String) = "otp/$phone"
-    }
+    object Register : Screen("register")
     object Home : Screen("home")
     object Stats : Screen("stats")
     object Withdraw : Screen("withdraw")
@@ -54,16 +52,19 @@ fun NavGraph(
 
         composable(Screen.Login.route) {
             LoginScreen(
-                onNavigateToOtp = { phone ->
-                    navController.navigate(Screen.Otp.createRoute(phone))
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Screen.Register.route)
                 }
             )
         }
 
-        composable(Screen.Otp.route) { backStackEntry ->
-            val phone = backStackEntry.arguments?.getString("phone") ?: ""
-            OtpScreen(
-                phone = phone,
+        composable(Screen.Register.route) {
+            RegisterScreen(
                 onNavigateToHome = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(0) { inclusive = true }

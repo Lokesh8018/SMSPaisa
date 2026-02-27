@@ -1,43 +1,68 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const prisma = require('../config/database');
-const { verifyFirebaseToken } = require('../services/firebaseAuth');
 const { generateReferralCode, successResponse, errorResponse } = require('../utils/helpers');
 
-const sendOtp = async (req, res) => {
+const register = async (req, res) => {
   try {
-    const { phone } = req.body;
-    // Firebase OTP is initiated client-side; server just acknowledges
-    return successResponse(res, {
-      message: 'Please verify OTP using Firebase on the client side',
-      phone,
+    const { phone, email, password, deviceId } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { phone } });
+    if (existingUser) {
+      return errorResponse(res, 'Phone number already registered', 'CONFLICT', 409);
+    }
+
+    const existingDevice = await prisma.device.findUnique({ where: { deviceId } });
+    if (existingDevice) {
+      return errorResponse(res, 'Device already registered', 'CONFLICT', 409);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const referralCode = generateReferralCode();
+
+    const user = await prisma.user.create({
+      data: {
+        phone,
+        email,
+        password: hashedPassword,
+        referralCode,
+        wallet: { create: {} },
+        devices: {
+          create: {
+            deviceId,
+            deviceName: 'Android Device',
+          },
+        },
+      },
     });
+
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN || '30d',
+    });
+
+    return successResponse(res, { token, user: { id: user.id, phone: user.phone, role: user.role } }, 201);
   } catch (err) {
-    console.error('sendOtp error:', err);
-    return errorResponse(res, 'Failed to process OTP request', 'OTP_ERROR', 500);
+    console.error('register error:', err);
+    return errorResponse(res, 'Registration failed', 'SERVER_ERROR', 500);
   }
 };
 
-const verifyOtp = async (req, res) => {
+const login = async (req, res) => {
   try {
-    const { idToken, phone } = req.body;
-    const decodedToken = await verifyFirebaseToken(idToken);
+    const { phone, password } = req.body;
 
-    if (decodedToken.phone_number !== phone) {
-      return errorResponse(res, 'Phone number mismatch', 'AUTH_ERROR', 401);
+    const user = await prisma.user.findUnique({ where: { phone } });
+    if (!user || !user.password) {
+      return errorResponse(res, 'Invalid phone or password', 'AUTH_ERROR', 401);
     }
 
-    let user = await prisma.user.findUnique({ where: { phone } });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return errorResponse(res, 'Invalid phone or password', 'AUTH_ERROR', 401);
+    }
 
-    if (!user) {
-      const referralCode = generateReferralCode();
-      user = await prisma.user.create({
-        data: {
-          phone,
-          referralCode,
-          wallet: { create: {} },
-        },
-        include: { wallet: true },
-      });
+    if (!user.isActive) {
+      return errorResponse(res, 'Account is inactive', 'AUTH_ERROR', 401);
     }
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
@@ -46,8 +71,8 @@ const verifyOtp = async (req, res) => {
 
     return successResponse(res, { token, user: { id: user.id, phone: user.phone, role: user.role } });
   } catch (err) {
-    console.error('verifyOtp error:', err);
-    return errorResponse(res, 'OTP verification failed', 'AUTH_ERROR', 401);
+    console.error('login error:', err);
+    return errorResponse(res, 'Login failed', 'SERVER_ERROR', 500);
   }
 };
 
@@ -78,4 +103,4 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { sendOtp, verifyOtp, getMe, updateProfile };
+module.exports = { register, login, getMe, updateProfile };
