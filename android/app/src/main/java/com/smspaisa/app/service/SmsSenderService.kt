@@ -142,7 +142,7 @@ class SmsSenderService : Service() {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to send SMS", e)
                 smsRepository.updateLocalLogStatus(task.taskId, SmsStatus.FAILED)
-                smsRepository.reportStatus(task.taskId, "FAILED", e.message)
+                smsRepository.reportStatus(task.taskId, "FAILED", deviceRepository.getDeviceId(), e.message)
                 webSocketManager.emitTaskResult(task.taskId, "FAILED", e.message)
                 webSocketManager.clearNewTask()
             }

@@ -42,4 +42,14 @@ const getTransactions = async (req, res) => {
   }
 };
 
-module.exports = { getBalance, getTransactions };
+const getPaymentAccounts = async (req, res) => {
+  try {
+    // Payment accounts are not yet persisted; return empty list
+    return successResponse(res, []);
+  } catch (err) {
+    console.error('getPaymentAccounts error:', err);
+    return errorResponse(res, 'Failed to get payment accounts', 'SERVER_ERROR', 500);
+  }
+};
+
+module.exports = { getBalance, getTransactions, getPaymentAccounts };

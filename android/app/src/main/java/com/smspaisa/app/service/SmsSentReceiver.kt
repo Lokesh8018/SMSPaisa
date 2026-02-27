@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.smspaisa.app.data.repository.DeviceRepository
 import com.smspaisa.app.data.repository.SmsRepository
 import com.smspaisa.app.model.SmsStatus
 import dagger.hilt.android.AndroidEntryPoint
@@ -17,6 +18,7 @@ import javax.inject.Inject
 class SmsSentReceiver : BroadcastReceiver() {
 
     @Inject lateinit var smsRepository: SmsRepository
+    @Inject lateinit var deviceRepository: DeviceRepository
 
     companion object {
         const val ACTION_SMS_SENT = "com.smspaisa.app.SMS_SENT"
@@ -34,7 +36,7 @@ class SmsSentReceiver : BroadcastReceiver() {
 
         CoroutineScope(Dispatchers.IO).launch {
             smsRepository.updateLocalLogStatus(taskId, status)
-            smsRepository.reportStatus(taskId, status.name)
+            smsRepository.reportStatus(taskId, status.name, deviceRepository.getDeviceId())
         }
     }
 }
