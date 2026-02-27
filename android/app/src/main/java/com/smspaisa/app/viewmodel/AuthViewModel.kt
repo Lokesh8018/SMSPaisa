@@ -34,6 +34,9 @@ class AuthViewModel @Inject constructor(
     private val _startDestination = MutableStateFlow(Screen.Onboarding.route)
     val startDestination: StateFlow<String> = _startDestination.asStateFlow()
 
+    private val _isReady = MutableStateFlow(false)
+    val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
     init {
         determineStartDestination()
     }
@@ -47,6 +50,7 @@ class AuthViewModel @Inject constructor(
                 token.isNullOrEmpty() -> Screen.Login.route
                 else -> Screen.Home.route
             }
+            _isReady.value = true
         }
     }
 
