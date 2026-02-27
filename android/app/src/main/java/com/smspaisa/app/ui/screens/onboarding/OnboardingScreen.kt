@@ -51,10 +51,6 @@ fun OnboardingScreen(
     val pagerState = rememberPagerState()
     val scope = rememberCoroutineScope()
 
-    fun completeOnboarding() {
-        onComplete()
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -66,7 +62,7 @@ fun OnboardingScreen(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.End
         ) {
-            TextButton(onClick = ::completeOnboarding) {
+            TextButton(onClick = onComplete) {
                 Text("Skip", color = MaterialTheme.colorScheme.primary)
             }
         }
@@ -101,7 +97,7 @@ fun OnboardingScreen(
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
                     } else {
-                        completeOnboarding()
+                        onComplete()
                     }
                 },
                 modifier = Modifier

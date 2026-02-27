@@ -15,10 +15,8 @@
     <path
         android:fillColor="#4CAF50"
         android:pathData="M68,62 L78,62 Q80,62 80,64 L80,74 Q80,76 78,76 L68,76 Q66,76 66,74 L66,64 Q66,62 68,62Z" />
-    <text
+    <!-- Rupee symbol path (₹) approximated as vector paths -->
+    <path
         android:fillColor="#FFFFFF"
-        android:fontFamily="sans-serif-medium"
-        android:textSize="8dp"
-        android:x="68"
-        android:y="72">₹</text>
+        android:pathData="M70,65 L76,65 M70,68 L76,68 M70,65 L70,75 M70,68 L74,75" />
 </vector>

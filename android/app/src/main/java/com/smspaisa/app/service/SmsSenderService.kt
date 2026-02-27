@@ -38,8 +38,8 @@ class SmsSenderService : Service() {
         const val CHANNEL_ID = "sms_sender_channel"
         const val NOTIFICATION_ID = 1001
         const val TAG = "SmsSenderService"
-        private const val SMS_DELAY_MIN = 3000L
-        private const val SMS_DELAY_MAX = 5000L
+        private const val SMS_DELAY_MIN_MILLIS = 3000L
+        private const val SMS_DELAY_MAX_MILLIS = 5000L
     }
 
     override fun onCreate() {
@@ -90,7 +90,7 @@ class SmsSenderService : Service() {
             }
 
             // Rate limiting
-            delay((SMS_DELAY_MIN..SMS_DELAY_MAX).random())
+            delay((SMS_DELAY_MIN_MILLIS..SMS_DELAY_MAX_MILLIS).random())
 
             try {
                 val smsManager = getSmsManager()

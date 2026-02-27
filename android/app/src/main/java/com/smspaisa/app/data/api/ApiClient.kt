@@ -15,8 +15,14 @@ import java.util.concurrent.TimeUnit
 class AuthInterceptor(
     private val userPreferences: UserPreferences
 ) : Interceptor {
+    @Volatile private var cachedToken: String? = null
+
+    fun updateToken(token: String?) {
+        cachedToken = token
+    }
+
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = runBlocking { userPreferences.authToken.first() }
+        val token = cachedToken ?: runBlocking { userPreferences.authToken.first() }.also { cachedToken = it }
         val request = if (!token.isNullOrEmpty()) {
             chain.request().newBuilder()
                 .addHeader("Authorization", "Bearer $token")
@@ -28,6 +34,7 @@ class AuthInterceptor(
         val response = chain.proceed(request)
 
         if (response.code == 401) {
+            cachedToken = null
             runBlocking { userPreferences.clearToken() }
         }
 
