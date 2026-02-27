@@ -179,6 +179,9 @@ const toggleUserActive = async (req, res) => {
 const changeUserRole = async (req, res) => {
   try {
     const { role } = req.body;
+    if (req.user.id === req.params.id) {
+      return errorResponse(res, 'Cannot change your own role', 'VALIDATION_ERROR', 422);
+    }
     const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) return errorResponse(res, 'User not found', 'NOT_FOUND', 404);
 
@@ -202,9 +205,18 @@ const rejectWithdrawal = async (req, res) => {
       return errorResponse(res, 'Transaction is not pending', 'VALIDATION_ERROR', 422);
     }
 
-    const updated = await prisma.transaction.update({
-      where: { id: req.params.id },
-      data: { status: 'FAILED' },
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.wallet.update({
+        where: { userId: transaction.userId },
+        data: {
+          balance: { increment: transaction.amount },
+          totalWithdrawn: { decrement: transaction.amount },
+        },
+      });
+      return tx.transaction.update({
+        where: { id: req.params.id },
+        data: { status: 'FAILED' },
+      });
     });
 
     return successResponse(res, { transaction: updated });

@@ -153,7 +153,7 @@ export default function Users() {
       <ConfirmDialog
         isOpen={confirm?.type === 'delete'}
         title="Delete User"
-        message={`Are you sure you want to delete ${confirm?.user?.phone}? This action cannot be undone.`}
+        message={`Are you sure you want to deactivate ${confirm?.user?.phone}? The user will be set as inactive.`}
         onConfirm={() => handleDelete(confirm.user)}
         onCancel={() => setConfirm(null)}
         confirmText="Delete"

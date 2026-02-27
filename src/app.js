@@ -47,7 +47,7 @@ setupSocketHandlers(io);
 const adminDistPath = path.join(__dirname, '..', 'admin', 'dist');
 if (fs.existsSync(adminDistPath)) {
   app.use('/admin', express.static(adminDistPath));
-  app.get('/admin/*', (req, res) => {
+  app.get('/admin/*', apiRateLimit, (req, res) => {
     res.sendFile(path.join(adminDistPath, 'index.html'));
   });
 }
