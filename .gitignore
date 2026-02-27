@@ -3,7 +3,6 @@ node_modules/
 dist/
 .DS_Store
 *.log
-prisma/migrations/
 
 # Android build artifacts
 android/.gradle/
