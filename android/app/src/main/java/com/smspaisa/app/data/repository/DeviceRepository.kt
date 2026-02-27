@@ -72,10 +72,7 @@ class DeviceRepository @Inject constructor(
     suspend fun updateDeviceSettings(
         dailyLimit: Int? = null,
         activeHoursStart: String? = null,
-        activeHoursEnd: String? = null,
-        preferredSim: Int? = null,
-        stopBatteryPercent: Int? = null,
-        wifiOnly: Boolean? = null
+        activeHoursEnd: String? = null
     ): Result<Device> = withContext(Dispatchers.IO) {
         try {
             val request = UpdateDeviceSettingsRequest(

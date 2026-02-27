@@ -122,12 +122,10 @@ const addUpi = async (req, res) => {
 
 const addBank = async (req, res) => {
   try {
-    const {
-      account_number = req.body.accountNumber,
-      ifsc_code = req.body.ifsc,
-      bank_name = req.body.bankName,
-      account_holder_name = req.body.accountHolderName,
-    } = req.body;
+    const account_number = req.body.account_number || req.body.accountNumber;
+    const ifsc_code = req.body.ifsc_code || req.body.ifsc;
+    const bank_name = req.body.bank_name || req.body.bankName;
+    const account_holder_name = req.body.account_holder_name || req.body.accountHolderName;
     if (!account_number || !ifsc_code || !bank_name) {
       return errorResponse(res, 'account_number, ifsc_code, and bank_name are required', 'VALIDATION_ERROR', 422);
     }
