@@ -111,25 +111,8 @@ const addUpi = async (req, res) => {
     const { upi_id } = req.body;
     if (!upi_id) return errorResponse(res, 'upi_id is required', 'VALIDATION_ERROR', 422);
 
-    await prisma.transaction.updateMany({
-      where: { userId: req.user.id, type: 'WITHDRAWAL', paymentMethod: 'UPI' },
-      data: {},
-    });
-
-    // Store UPI ID in a pending transaction record for future use
-    await prisma.transaction.create({
-      data: {
-        userId: req.user.id,
-        type: 'WITHDRAWAL',
-        amount: 0,
-        status: 'PENDING',
-        paymentMethod: 'UPI',
-        paymentDetails: { upi_id },
-        description: 'UPI ID saved',
-      },
-    });
-
-    return successResponse(res, { message: 'UPI ID saved', upi_id });
+    // UPI ID is validated and acknowledged; pass it in paymentDetails when requesting a withdrawal
+    return successResponse(res, { message: 'UPI ID validated. Use it in withdrawal requests.', upi_id });
   } catch (err) {
     console.error('addUpi error:', err);
     return errorResponse(res, 'Failed to save UPI ID', 'SERVER_ERROR', 500);
@@ -143,19 +126,8 @@ const addBank = async (req, res) => {
       return errorResponse(res, 'account_number, ifsc_code, and bank_name are required', 'VALIDATION_ERROR', 422);
     }
 
-    await prisma.transaction.create({
-      data: {
-        userId: req.user.id,
-        type: 'WITHDRAWAL',
-        amount: 0,
-        status: 'PENDING',
-        paymentMethod: 'BANK',
-        paymentDetails: { account_number, ifsc_code, bank_name, account_holder_name },
-        description: 'Bank details saved',
-      },
-    });
-
-    return successResponse(res, { message: 'Bank details saved', account_number, ifsc_code, bank_name });
+    // Bank details are validated and acknowledged; pass them in paymentDetails when requesting a withdrawal
+    return successResponse(res, { message: 'Bank details validated. Use them in withdrawal requests.', account_number, ifsc_code, bank_name });
   } catch (err) {
     console.error('addBank error:', err);
     return errorResponse(res, 'Failed to save bank details', 'SERVER_ERROR', 500);
