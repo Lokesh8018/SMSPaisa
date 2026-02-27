@@ -14,13 +14,16 @@ const validate = (schema, source = 'body') => {
 };
 
 const schemas = {
-  sendOtp: Joi.object({
+  register: Joi.object({
     phone: Joi.string().pattern(/^\+?[1-9]\d{9,14}$/).required(),
+    email: Joi.string().email().optional(),
+    password: Joi.string().min(8).required(),
+    deviceId: Joi.string().required(),
   }),
 
-  verifyOtp: Joi.object({
-    idToken: Joi.string().required(),
+  login: Joi.object({
     phone: Joi.string().pattern(/^\+?[1-9]\d{9,14}$/).required(),
+    password: Joi.string().required(),
   }),
 
   updateProfile: Joi.object({

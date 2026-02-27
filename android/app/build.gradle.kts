@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.google.services)
 }
 
 android {
@@ -92,11 +91,6 @@ dependencies {
 
     // Socket.IO
     implementation(libs.socket.io)
-
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.messaging)
 
     // Gson
     implementation(libs.gson)

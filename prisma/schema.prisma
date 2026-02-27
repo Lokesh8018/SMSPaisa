@@ -48,6 +48,7 @@ model User {
   referredById String?
   referredBy   User?    @relation("UserReferrals", fields: [referredById], references: [id])
   referrals    User[]   @relation("UserReferrals")
+  password     String?
   kycVerified  Boolean  @default(false)
   isActive     Boolean  @default(true)
   role         Role     @default(USER)
