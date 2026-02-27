@@ -149,7 +149,7 @@ class SmsSenderService : Service() {
     }
 
     private suspend fun startHeartbeat() {
-        while (isActive) {
+        while (coroutineContext.isActive) {
             delay(30_000)
             try {
                 val batteryLevel = getBatteryLevel()
