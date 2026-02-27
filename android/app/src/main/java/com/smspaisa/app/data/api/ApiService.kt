@@ -27,7 +27,8 @@ data class UpdateProfileRequest(
 data class ReportStatusRequest(
     @SerializedName("taskId") val taskId: String,
     @SerializedName("status") val status: String,
-    @SerializedName("errorMessage") val errorMessage: String?
+    @SerializedName("deviceId") val deviceId: String,
+    @SerializedName("errorMessage") val errorMessage: String? = null
 )
 
 data class WithdrawalRequest(

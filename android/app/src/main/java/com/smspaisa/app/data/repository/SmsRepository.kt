@@ -38,10 +38,10 @@ class SmsRepository @Inject constructor(
         }
     }
 
-    suspend fun reportStatus(taskId: String, status: String, errorMessage: String? = null): Result<Unit> =
+    suspend fun reportStatus(taskId: String, status: String, deviceId: String, errorMessage: String? = null): Result<Unit> =
         withContext(Dispatchers.IO) {
             try {
-                val response = apiService.reportStatus(ReportStatusRequest(taskId, status, errorMessage))
+                val response = apiService.reportStatus(ReportStatusRequest(taskId, status, deviceId, errorMessage))
                 if (response.isSuccessful) {
                     Result.success(Unit)
                 } else {

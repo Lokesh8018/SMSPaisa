@@ -29,6 +29,8 @@ fun SmsLogItem(
         SmsStatus.SENT -> StatusSent
         SmsStatus.FAILED -> StatusFailed
         SmsStatus.PENDING -> StatusPending
+        SmsStatus.QUEUED -> StatusPending
+        SmsStatus.ASSIGNED -> StatusSent
     }
 
     Card(
