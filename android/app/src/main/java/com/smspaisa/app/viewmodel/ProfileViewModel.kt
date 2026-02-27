@@ -75,7 +75,6 @@ class ProfileViewModel @Inject constructor(
     fun updateStopBatteryPercent(percent: Int) {
         viewModelScope.launch {
             userPreferences.setStopBatteryPercent(percent)
-            deviceRepository.updateDeviceSettings(stopBatteryPercent = percent)
             refreshSettings()
         }
     }
@@ -83,7 +82,6 @@ class ProfileViewModel @Inject constructor(
     fun updatePreferredSim(sim: Int) {
         viewModelScope.launch {
             userPreferences.setPreferredSim(sim)
-            deviceRepository.updateDeviceSettings(preferredSim = sim)
             refreshSettings()
         }
     }
@@ -91,7 +89,6 @@ class ProfileViewModel @Inject constructor(
     fun updateWifiOnly(wifiOnly: Boolean) {
         viewModelScope.launch {
             userPreferences.setWifiOnly(wifiOnly)
-            deviceRepository.updateDeviceSettings(wifiOnly = wifiOnly)
             refreshSettings()
         }
     }

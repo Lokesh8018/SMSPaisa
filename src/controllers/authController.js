@@ -40,7 +40,7 @@ const register = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN || '30d',
     });
 
-    return successResponse(res, { token, user: { id: user.id, phone: user.phone, role: user.role } }, 201);
+    return successResponse(res, { token, user: { id: user.id, name: user.name, phone: user.phone, email: user.email, referralCode: user.referralCode, role: user.role, createdAt: user.createdAt } }, 201);
   } catch (err) {
     console.error('register error:', err);
     return errorResponse(res, 'Registration failed', 'SERVER_ERROR', 500);
@@ -69,7 +69,7 @@ const login = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN || '30d',
     });
 
-    return successResponse(res, { token, user: { id: user.id, phone: user.phone, role: user.role } });
+    return successResponse(res, { token, user: { id: user.id, name: user.name, phone: user.phone, email: user.email, referralCode: user.referralCode, role: user.role, createdAt: user.createdAt } });
   } catch (err) {
     console.error('login error:', err);
     return errorResponse(res, 'Login failed', 'SERVER_ERROR', 500);
@@ -82,7 +82,7 @@ const getMe = async (req, res) => {
       where: { id: req.user.id },
       include: { wallet: true },
     });
-    return successResponse(res, { user });
+    return successResponse(res, user);
   } catch (err) {
     console.error('getMe error:', err);
     return errorResponse(res, 'Failed to fetch user', 'SERVER_ERROR', 500);
@@ -96,7 +96,7 @@ const updateProfile = async (req, res) => {
       where: { id: req.user.id },
       data: { name, email },
     });
-    return successResponse(res, { user });
+    return successResponse(res, user);
   } catch (err) {
     console.error('updateProfile error:', err);
     return errorResponse(res, 'Failed to update profile', 'SERVER_ERROR', 500);

@@ -51,6 +51,7 @@ class SmsSenderService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification("SMSPaisa running..."))
         serviceScope.launch { startWorking() }
         serviceScope.launch { startHeartbeat() }
+        serviceScope.launch { observeTaskCancelled() }
         return START_STICKY
     }
 
@@ -145,6 +146,14 @@ class SmsSenderService : Service() {
                 webSocketManager.emitTaskResult(task.taskId, "FAILED", e.message)
                 webSocketManager.clearNewTask()
             }
+        }
+    }
+
+    private suspend fun observeTaskCancelled() {
+        webSocketManager.taskCancelled.collect { cancelledTaskId ->
+            cancelledTaskId ?: return@collect
+            Log.d(TAG, "Task cancelled by server: $cancelledTaskId")
+            smsRepository.updateLocalLogStatus(cancelledTaskId, SmsStatus.FAILED)
         }
     }
 

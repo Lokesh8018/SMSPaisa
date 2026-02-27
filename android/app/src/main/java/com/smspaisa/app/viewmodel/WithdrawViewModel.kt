@@ -86,8 +86,9 @@ class WithdrawViewModel @Inject constructor(
                 return@launch
             }
 
+            val paymentDetails = mapOf("accountId" to accountId)
             _uiState.value = WithdrawUiState.Loading
-            val result = walletRepository.requestWithdrawal(amount, _selectedMethod.value, accountId)
+            val result = walletRepository.requestWithdrawal(amount, _selectedMethod.value, paymentDetails)
             if (result.isSuccess) {
                 _uiState.value = WithdrawUiState.Success("Withdrawal of ₹$amount requested successfully!")
             } else {

@@ -14,7 +14,7 @@ const registerDevice = async (req, res) => {
         where: { deviceId },
         data: { deviceName, simInfo, lastSeen: new Date() },
       });
-      return successResponse(res, { device });
+      return successResponse(res, device);
     }
 
     const device = await prisma.device.create({
@@ -27,7 +27,7 @@ const registerDevice = async (req, res) => {
       },
     });
 
-    return successResponse(res, { device }, 201);
+    return successResponse(res, device, 201);
   } catch (err) {
     console.error('registerDevice error:', err);
     return errorResponse(res, 'Failed to register device', 'SERVER_ERROR', 500);
@@ -56,7 +56,7 @@ const updateDeviceSettings = async (req, res) => {
       data: updateData,
     });
 
-    return successResponse(res, { device: updated });
+    return successResponse(res, updated);
   } catch (err) {
     console.error('updateDeviceSettings error:', err);
     return errorResponse(res, 'Failed to update device settings', 'SERVER_ERROR', 500);
@@ -92,7 +92,7 @@ const listDevices = async (req, res) => {
       where: { userId: req.user.id },
       orderBy: { createdAt: 'desc' },
     });
-    return successResponse(res, { devices });
+    return successResponse(res, devices);
   } catch (err) {
     console.error('listDevices error:', err);
     return errorResponse(res, 'Failed to list devices', 'SERVER_ERROR', 500);

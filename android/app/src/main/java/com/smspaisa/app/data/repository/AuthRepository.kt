@@ -26,7 +26,7 @@ class AuthRepository @Inject constructor(
                     userPreferences.saveAuthToken(authResponse.token)
                     userPreferences.saveUser(
                         authResponse.user.id,
-                        authResponse.user.name,
+                        authResponse.user.name ?: "",
                         authResponse.user.phone
                     )
                     Result.success(authResponse)
@@ -47,7 +47,7 @@ class AuthRepository @Inject constructor(
                     userPreferences.saveAuthToken(authResponse.token)
                     userPreferences.saveUser(
                         authResponse.user.id,
-                        authResponse.user.name,
+                        authResponse.user.name ?: "",
                         authResponse.user.phone
                     )
                     Result.success(authResponse)
