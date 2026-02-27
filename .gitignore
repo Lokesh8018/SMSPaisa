@@ -12,4 +12,4 @@ android/build/
 android/local.properties
 android/**/*.iml
 android/.idea/
-android/app/google-services.json
+# android/app/google-services.json is committed as a placeholder for CI builds
