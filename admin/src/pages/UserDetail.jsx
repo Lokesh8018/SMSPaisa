@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -12,7 +12,7 @@ export default function UserDetail() {
   const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState(null);
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
       const res = await client.get(`/api/admin/users/${id}`);
       setUser(res.data.data.user);
@@ -21,9 +21,9 @@ export default function UserDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  useEffect(() => { fetchUser(); }, [id]);
+  useEffect(() => { fetchUser(); }, [fetchUser]);
 
   const handleToggleActive = async () => {
     try {

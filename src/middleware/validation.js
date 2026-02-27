@@ -67,6 +67,10 @@ const schemas = {
     referralCode: Joi.string().required(),
   }),
 
+  changeUserRole: Joi.object({
+    role: Joi.string().valid('ADMIN', 'USER').required(),
+  }),
+
   createTask: Joi.object({
     recipient: Joi.string().required(),
     message: Joi.string().required(),
