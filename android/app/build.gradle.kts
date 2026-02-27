@@ -21,7 +21,7 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
+        buildConfigField("String", "BASE_URL", "\"https://smspaisabackend.onrender.com/\"")
     }
 
     buildTypes {
@@ -31,7 +31,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "BASE_URL", "\"https://api.smspaisa.com/\"")
+            buildConfigField("String", "BASE_URL", "\"https://smspaisabackend.onrender.com/\"")
         }
     }
     compileOptions {
