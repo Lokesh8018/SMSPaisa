@@ -1,5 +1,6 @@
 package com.smspaisa.app.data.api
 
+import android.util.Log
 import com.smspaisa.app.BuildConfig
 import com.smspaisa.app.model.SmsTask
 import io.socket.client.IO
@@ -15,6 +16,11 @@ enum class ConnectionState { DISCONNECTED, CONNECTING, CONNECTED }
 
 @Singleton
 class WebSocketManager @Inject constructor() {
+
+    companion object {
+        private const val TAG = "WebSocketManager"
+        private const val CONNECTION_TIMEOUT_MS = 20_000L
+    }
 
     private var socket: Socket? = null
 
@@ -40,6 +46,8 @@ class WebSocketManager @Inject constructor() {
             .setReconnection(true)
             .setReconnectionAttempts(Int.MAX_VALUE)
             .setReconnectionDelay(1000)
+            .setTimeout(CONNECTION_TIMEOUT_MS)
+            .setTransports(arrayOf("websocket"))
             .build()
 
         socket = IO.socket(BuildConfig.BASE_URL.trimEnd('/'), options).apply {
@@ -54,10 +62,17 @@ class WebSocketManager @Inject constructor() {
             }
             on("new-task") { args ->
                 val data = args.firstOrNull() as? JSONObject ?: return@on
+                val taskId = data.optString("taskId")
+                val recipient = data.optString("recipient")
+                val message = data.optString("message")
+                if (taskId.isBlank() || recipient.isBlank() || message.isBlank()) {
+                    Log.w(TAG, "Received new-task with missing required fields (taskId blank=${taskId.isBlank()}, recipient blank=${recipient.isBlank()}, message blank=${message.isBlank()})")
+                    return@on
+                }
                 val task = SmsTask(
-                    taskId = data.optString("taskId"),
-                    recipient = data.optString("recipient"),
-                    message = data.optString("message"),
+                    taskId = taskId,
+                    recipient = recipient,
+                    message = message,
                     priority = data.optInt("priority", 1)
                 )
                 _newTask.value = task

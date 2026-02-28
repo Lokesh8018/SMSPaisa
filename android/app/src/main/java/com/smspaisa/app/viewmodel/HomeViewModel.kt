@@ -1,7 +1,11 @@
 package com.smspaisa.app.viewmodel
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smspaisa.app.data.api.WebSocketManager
@@ -130,6 +134,23 @@ class HomeViewModel @Inject constructor(
     fun onPermissionsResult(allGranted: Boolean) {
         _permissionsNeeded.value = false
         if (allGranted) {
+            val sendSmsGranted = ContextCompat.checkSelfPermission(
+                context, Manifest.permission.SEND_SMS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            val notificationsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+
+            if (!sendSmsGranted || !notificationsGranted) {
+                updateServiceEnabledState(false)
+                return
+            }
+
             viewModelScope.launch {
                 try {
                     userPreferences.setServiceEnabled(true)
