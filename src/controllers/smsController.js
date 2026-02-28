@@ -143,6 +143,11 @@ const getBatchTasks = async (req, res) => {
       return errorResponse(res, 'deviceId is required', 'VALIDATION_ERROR', 422);
     }
 
+    const device = await prisma.device.findFirst({ where: { deviceId, userId: req.user.id } });
+    if (!device) {
+      return errorResponse(res, 'Device not found', 'NOT_FOUND', 404);
+    }
+
     const settings = await prisma.platformSettings.findFirst({ where: { id: 'default' } });
     const roundLimit = settings?.perRoundSendLimit || 25;
 
@@ -160,7 +165,7 @@ const getBatchTasks = async (req, res) => {
         data: {
           status: 'ASSIGNED',
           assignedToId: req.user.id,
-          assignedDeviceId: deviceId,
+          assignedDeviceId: device.id,
           assignedAt: new Date(),
         },
       });
@@ -171,8 +176,7 @@ const getBatchTasks = async (req, res) => {
     return successResponse(res, { tasks, roundLimit });
   } catch (err) {
     console.error('getBatchTasks error:', err);
-    const debugMessage = `Failed to get batch tasks: ${err.message || 'Unknown error'} | ${err.code || 'NO_CODE'}`;
-    return errorResponse(res, debugMessage, 'SERVER_ERROR', 500);
+    return errorResponse(res, 'Failed to get batch tasks', 'SERVER_ERROR', 500);
   }
 };
 
