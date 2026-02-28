@@ -1,5 +1,6 @@
 package com.smspaisa.app.data.api
 
+import com.google.gson.Gson
 import com.smspaisa.app.BuildConfig
 import com.smspaisa.app.data.datastore.UserPreferences
 import kotlinx.coroutines.flow.first
@@ -59,11 +60,11 @@ object ApiClient {
             .build()
     }
 
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
