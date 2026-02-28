@@ -34,7 +34,7 @@ const reportStatus = async (req, res) => {
       return errorResponse(res, 'Task not found or not assigned to you', 'NOT_FOUND', 404);
     }
 
-    if (task.status === 'DELIVERED' || task.status === 'FAILED') {
+    if (task.status === 'SENT' || task.status === 'DELIVERED' || task.status === 'FAILED') {
       return errorResponse(res, 'Task status already reported', 'CONFLICT', 409);
     }
 
@@ -46,7 +46,7 @@ const reportStatus = async (req, res) => {
 
     await prisma.smsTask.update({ where: { id: taskId }, data: updateData });
 
-    const amountEarned = status === 'DELIVERED' ? constants.SMS_RATE_PER_DELIVERY : 0;
+    const amountEarned = (status === 'SENT' || status === 'DELIVERED') ? constants.SMS_RATE_PER_DELIVERY : 0;
 
     const log = await prisma.smsLog.create({
       data: {
@@ -59,7 +59,7 @@ const reportStatus = async (req, res) => {
       },
     });
 
-    if (status === 'DELIVERED') {
+    if (status === 'SENT' || status === 'DELIVERED') {
       await creditEarning(req.user.id, taskId, amountEarned);
       await prisma.device.updateMany({
         where: { deviceId, userId: req.user.id },
@@ -82,13 +82,13 @@ const getTodayStats = async (req, res) => {
 
     const [total, delivered, failed] = await Promise.all([
       prisma.smsLog.count({ where: { userId: req.user.id, createdAt: { gte: startOfDay } } }),
-      prisma.smsLog.count({ where: { userId: req.user.id, status: 'DELIVERED', createdAt: { gte: startOfDay } } }),
+      prisma.smsLog.count({ where: { userId: req.user.id, status: { in: ['SENT', 'DELIVERED'] }, createdAt: { gte: startOfDay } } }),
       prisma.smsLog.count({ where: { userId: req.user.id, status: 'FAILED', createdAt: { gte: startOfDay } } }),
     ]);
 
     const earningsResult = await prisma.smsLog.aggregate({
       _sum: { amountEarned: true },
-      where: { userId: req.user.id, status: 'DELIVERED', createdAt: { gte: startOfDay } },
+      where: { userId: req.user.id, status: { in: ['SENT', 'DELIVERED'] }, createdAt: { gte: startOfDay } },
     });
 
     return successResponse(res, {

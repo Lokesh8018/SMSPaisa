@@ -82,7 +82,7 @@ const checkAndPayReferralBonus = async (userId) => {
   if (!referral || referral.bonusPaid) return;
 
   const smsCount = await prisma.smsLog.count({
-    where: { userId, status: 'DELIVERED' },
+    where: { userId, status: { in: ['SENT', 'DELIVERED'] } },
   });
 
   if (smsCount >= constants.REFERRAL_QUALIFYING_SMS) {
