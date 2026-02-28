@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.BatteryManager
+import android.os.Build
 import android.os.IBinder
 import android.telephony.SmsManager
 import android.util.Log
@@ -48,7 +49,15 @@ class SmsSenderService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(NOTIFICATION_ID, buildNotification("SMSPaisa running..."))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIFICATION_ID,
+                buildNotification("SMSPaisa running..."),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, buildNotification("SMSPaisa running..."))
+        }
         serviceScope.launch { startWorking() }
         serviceScope.launch { startHeartbeat() }
         serviceScope.launch { observeTaskCancelled() }
