@@ -42,10 +42,11 @@ class SmsRepository @Inject constructor(
     suspend fun getBatchTasks(deviceId: String): Result<BatchTasksResponse> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getBatchTasks(deviceId)
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()!!.data!!)
+            val body = response.body()
+            if (response.isSuccessful && body?.success == true && body.data != null) {
+                Result.success(body.data)
             } else {
-                Result.failure(Exception(response.body()?.error?.message ?: "Failed to get batch tasks"))
+                Result.failure(Exception(body?.error?.message ?: "Failed to get batch tasks"))
             }
         } catch (e: Exception) {
             Result.failure(e)
