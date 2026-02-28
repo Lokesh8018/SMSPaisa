@@ -88,6 +88,14 @@ const schemas = {
       })
     ).min(1).required(),
   }),
+
+  assignTask: Joi.object({
+    recipient: Joi.string().required(),
+    message: Joi.string().required(),
+    clientId: Joi.string().required(),
+    priority: Joi.number().integer().min(0).default(0),
+    userId: Joi.string().uuid().required(),
+  }),
 };
 
 module.exports = { validate, schemas };

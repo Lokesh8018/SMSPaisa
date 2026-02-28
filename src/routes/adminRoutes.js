@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   listUsers, getUserById, getPlatformStats, getOnlineDevices,
-  createSmsTask, bulkCreateSmsTasks, listWithdrawals, approveWithdrawal,
+  createSmsTask, bulkCreateSmsTasks, assignTaskToUser, listWithdrawals, approveWithdrawal,
   toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
   listSmsLogs, deleteUser, listTransactions,
 } = require('../controllers/adminController');
@@ -20,6 +20,7 @@ router.get('/stats', getPlatformStats);
 router.get('/devices', getOnlineDevices);
 router.post('/sms/create-task', validate(schemas.createTask), createSmsTask);
 router.post('/sms/bulk-create', validate(schemas.bulkCreateTask), bulkCreateSmsTasks);
+router.post('/sms/assign-task', validate(schemas.assignTask), assignTaskToUser);
 router.get('/sms/tasks', listSmsTasks);
 router.get('/sms/logs', listSmsLogs);
 router.get('/withdrawals', listWithdrawals);
