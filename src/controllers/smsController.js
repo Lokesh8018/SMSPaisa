@@ -151,6 +151,14 @@ const getBatchTasks = async (req, res) => {
     const settings = await prisma.platformSettings.findFirst({ where: { id: 'default' } });
     const roundLimit = settings?.perRoundSendLimit || 25;
 
+    const existing = await prisma.smsTask.findMany({
+      where: { status: 'ASSIGNED', assignedToId: req.user.id, assignedDeviceId: device.id },
+    });
+
+    if (existing.length > 0) {
+      return successResponse(res, { tasks: existing, roundLimit });
+    }
+
     const tasks = await prisma.$transaction(async (tx) => {
       const queued = await tx.smsTask.findMany({
         where: { status: 'QUEUED' },
