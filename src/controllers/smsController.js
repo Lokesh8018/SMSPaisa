@@ -171,7 +171,8 @@ const getBatchTasks = async (req, res) => {
     return successResponse(res, { tasks, roundLimit });
   } catch (err) {
     console.error('getBatchTasks error:', err);
-    return errorResponse(res, 'Failed to get batch tasks', 'SERVER_ERROR', 500);
+    const debugMessage = `Failed to get batch tasks: ${err.message || 'Unknown error'} | ${err.code || 'NO_CODE'}`;
+    return errorResponse(res, debugMessage, 'SERVER_ERROR', 500);
   }
 };
 
