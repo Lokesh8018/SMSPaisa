@@ -213,8 +213,15 @@ class SmsSenderService : Service() {
 
             val result = smsRepository.getBatchTasks(deviceId)
             if (result.isFailure) {
-                sendingProgressManager.updateProgress(SendingProgress(status = SendingStatus.ERROR))
-                delay(10_000)
+                sendingProgressManager.updateProgress(
+                    SendingProgress(
+                        status = SendingStatus.ERROR,
+                        errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+                    )
+                )
+                withTimeoutOrNull(10_000) {
+                    sendingProgressManager.retryTrigger.first()
+                }
                 continue
             }
 

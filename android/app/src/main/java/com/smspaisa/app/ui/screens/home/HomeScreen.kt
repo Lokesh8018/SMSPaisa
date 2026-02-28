@@ -157,7 +157,7 @@ fun HomeScreen(
                         )
                     }
                     item {
-                        SendingProgressCard(progress = sendingProgress)
+                        SendingProgressCard(progress = sendingProgress, onRetry = { viewModel.retryBatchPolling() })
                     }
                     item {
                         Text(
