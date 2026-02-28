@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smspaisa.app.R
+import com.smspaisa.app.ui.components.LottieLoading
 import com.smspaisa.app.viewmodel.ProfileUiState
 import com.smspaisa.app.viewmodel.ProfileViewModel
 
@@ -78,7 +79,7 @@ fun ProfileScreen(
         when (val state = uiState) {
             is ProfileUiState.Loading -> {
                 Box(Modifier.fillMaxSize().padding(paddingValues), Alignment.Center) {
-                    CircularProgressIndicator()
+                    LottieLoading()
                 }
             }
             is ProfileUiState.Success -> {

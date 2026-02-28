@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smspaisa.app.data.api.ReferralEntry
+import com.smspaisa.app.ui.components.LottieLoading
 import com.smspaisa.app.viewmodel.ReferralUiState
 import com.smspaisa.app.viewmodel.ReferralViewModel
 
@@ -68,7 +69,7 @@ fun ReferralScreen(
         when (val state = uiState) {
             is ReferralUiState.Loading -> {
                 Box(Modifier.fillMaxSize().padding(paddingValues), Alignment.Center) {
-                    CircularProgressIndicator()
+                    LottieLoading()
                 }
             }
             is ReferralUiState.Success -> {

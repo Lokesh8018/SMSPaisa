@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +19,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.smspaisa.app.ui.components.LottieLoading
 import com.smspaisa.app.ui.screens.auth.LoginScreen
 import com.smspaisa.app.ui.screens.auth.RegisterScreen
 import com.smspaisa.app.ui.screens.home.HomeScreen
@@ -62,7 +62,7 @@ fun NavGraph(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                CircularProgressIndicator()
+                LottieLoading(centered = false)
             }
         }
         return

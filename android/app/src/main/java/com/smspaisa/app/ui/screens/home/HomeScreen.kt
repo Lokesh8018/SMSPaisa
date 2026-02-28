@@ -153,7 +153,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    LottieLoading()
                 }
             }
             is HomeUiState.Success -> {
