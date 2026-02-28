@@ -1,6 +1,7 @@
 const prisma = require('../config/database');
 const { distributeTask } = require('../services/taskDistributor');
 const { successResponse, errorResponse, paginate, paginationMeta } = require('../utils/helpers');
+const { pushTaskToDevice } = require('../websocket/socketHandler');
 
 const listUsers = async (req, res) => {
   try {
@@ -110,6 +111,49 @@ const bulkCreateSmsTasks = async (req, res) => {
   } catch (err) {
     console.error('bulkCreateSmsTasks error:', err);
     return errorResponse(res, 'Failed to bulk create SMS tasks', 'SERVER_ERROR', 500);
+  }
+};
+
+const assignTaskToUser = async (req, res) => {
+  try {
+    const { recipient, message, clientId, priority = 0, userId } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { devices: { where: { isOnline: true }, take: 1 } },
+    });
+
+    if (!user || !user.isActive) {
+      return errorResponse(res, 'User not found or inactive', 'NOT_FOUND', 404);
+    }
+
+    let device = user.devices[0];
+    if (!device) {
+      device = await prisma.device.findFirst({ where: { userId } });
+    }
+
+    const task = await prisma.smsTask.create({
+      data: {
+        recipient,
+        message,
+        clientId,
+        priority,
+        status: device ? 'ASSIGNED' : 'QUEUED',
+        assignedToId: userId,
+        assignedDeviceId: device?.id || null,
+        assignedAt: new Date(),
+      },
+    });
+
+    if (device && device.isOnline) {
+      const { io } = require('../app');
+      pushTaskToDevice(io, device.deviceId, task);
+    }
+
+    return successResponse(res, { task }, 201);
+  } catch (err) {
+    console.error('assignTaskToUser error:', err);
+    return errorResponse(res, 'Failed to assign task', 'SERVER_ERROR', 500);
   }
 };
 
@@ -327,7 +371,7 @@ const listTransactions = async (req, res) => {
 
 module.exports = {
   listUsers, getUserById, getPlatformStats, getOnlineDevices,
-  createSmsTask, bulkCreateSmsTasks, listWithdrawals, approveWithdrawal,
+  createSmsTask, bulkCreateSmsTasks, assignTaskToUser, listWithdrawals, approveWithdrawal,
   toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
   listSmsLogs, deleteUser, listTransactions,
 };

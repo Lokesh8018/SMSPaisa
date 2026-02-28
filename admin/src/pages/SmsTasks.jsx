@@ -13,8 +13,11 @@ export default function SmsTasks() {
   const [status, setStatus] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
+  const [showAssign, setShowAssign] = useState(false);
+  const [users, setUsers] = useState([]);
   const [form, setForm] = useState({ recipient: '', message: '', clientId: '', priority: 0 });
   const [bulkInput, setBulkInput] = useState('');
+  const [assignForm, setAssignForm] = useState({ recipient: '', message: '', clientId: '', priority: 0, userId: '' });
 
   const fetchTasks = useCallback(async (page = 1) => {
     setLoading(true);
@@ -32,6 +35,17 @@ export default function SmsTasks() {
   }, [status]);
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await client.get('/api/admin/users?limit=100');
+      setUsers(res.data.data.users || []);
+    } catch (err) {
+      toast.error('Failed to load users');
+    }
+  };
+
+  useEffect(() => { fetchUsers(); }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -57,6 +71,19 @@ export default function SmsTasks() {
       fetchTasks();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Invalid JSON or failed to create tasks');
+    }
+  };
+
+  const handleAssign = async (e) => {
+    e.preventDefault();
+    try {
+      await client.post('/api/admin/sms/assign-task', assignForm);
+      toast.success('Task assigned to user');
+      setShowAssign(false);
+      setAssignForm({ recipient: '', message: '', clientId: '', priority: 0, userId: '' });
+      fetchTasks();
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Failed to assign task');
     }
   };
 
@@ -86,6 +113,10 @@ export default function SmsTasks() {
           onClick={() => setShowBulk(!showBulk)}
           className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
         >Bulk Create</button>
+        <button
+          onClick={() => setShowAssign(!showAssign)}
+          className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
+        >📋 Assign to User</button>
       </div>
 
       {showCreate && (
@@ -127,6 +158,51 @@ export default function SmsTasks() {
             <textarea value={bulkInput} onChange={e => setBulkInput(e.target.value)}
               rows={6} className="w-full border rounded-lg px-3 py-2 text-sm font-mono mb-3" placeholder='[{"recipient":"+919876543210","message":"Test","clientId":"c1","priority":0}]' />
             <button type="submit" className="px-6 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">Bulk Create</button>
+          </form>
+        </div>
+      )}
+
+      {showAssign && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="font-semibold text-gray-800 mb-4">Assign Task to Specific User</h3>
+          <form onSubmit={handleAssign} className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Choose User</label>
+              <select
+                value={assignForm.userId}
+                onChange={e => setAssignForm({...assignForm, userId: e.target.value})}
+                required
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="">Select a user...</option>
+                {users.map(u => (
+                  <option key={u.id} value={u.id}>{u.phone} {u.name ? `(${u.name})` : ''}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Recipient</label>
+              <input value={assignForm.recipient} onChange={e => setAssignForm({...assignForm, recipient: e.target.value})}
+                required className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="+919876543210" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Client ID</label>
+              <input value={assignForm.clientId} onChange={e => setAssignForm({...assignForm, clientId: e.target.value})}
+                required className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="client-001" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Priority</label>
+              <input type="number" value={assignForm.priority} onChange={e => setAssignForm({...assignForm, priority: parseInt(e.target.value) || 0})}
+                min={0} className="w-full border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Message</label>
+              <textarea value={assignForm.message} onChange={e => setAssignForm({...assignForm, message: e.target.value})}
+                required rows={3} className="w-full border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div className="flex items-end">
+              <button type="submit" className="px-6 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">Assign Task</button>
+            </div>
           </form>
         </div>
       )}
