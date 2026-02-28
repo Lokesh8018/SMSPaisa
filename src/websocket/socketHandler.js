@@ -68,36 +68,74 @@ const setupSocketHandlers = (io) => {
     socket.on('task-result', async (data) => {
       try {
         const { taskId, status, deviceId } = data;
+
+        const validStatuses = ['SENT', 'DELIVERED', 'FAILED'];
+        if (!validStatuses.includes(status)) return;
+
         const task = await prisma.smsTask.findFirst({
           where: { id: taskId, assignedToId: socket.user.id },
         });
 
         if (!task) return;
 
+        // Block terminal statuses
+        if (task.status === 'DELIVERED' || task.status === 'FAILED') return;
+
+        // Block same-status re-reports
+        if (task.status === status) return;
+
+        // Only allow valid transitions
+        const validTransitions = {
+          'ASSIGNED': ['SENT', 'DELIVERED', 'FAILED'],
+          'SENT': ['DELIVERED', 'FAILED'],
+        };
+        const allowed = validTransitions[task.status];
+        if (!allowed || !allowed.includes(status)) return;
+
         await prisma.smsTask.update({
           where: { id: taskId },
           data: {
             status,
-            sentAt: status !== 'FAILED' ? new Date() : undefined,
-            deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+            sentAt: (status === 'SENT' || status === 'DELIVERED') && !task.sentAt ? new Date() : task.sentAt,
+            deliveredAt: status === 'DELIVERED' ? new Date() : task.deliveredAt,
           },
         });
 
-        const amountEarned = status === 'DELIVERED' ? constants.SMS_RATE_PER_DELIVERY : 0;
+        // Only credit earnings on first successful status, never twice
+        const existingEarningLog = (status === 'SENT' || status === 'DELIVERED')
+          ? await prisma.smsLog.findFirst({
+              where: { taskId, userId: socket.user.id, amountEarned: { gt: 0 } },
+            })
+          : null;
 
-        await prisma.smsLog.create({
-          data: {
-            userId: socket.user.id,
-            taskId,
-            status,
-            amountEarned,
-            sentAt: status !== 'FAILED' ? new Date() : undefined,
-            deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
-          },
-        });
+        const shouldCredit = (status === 'SENT' || status === 'DELIVERED') && !existingEarningLog;
+        const amountEarned = shouldCredit ? constants.SMS_RATE_PER_DELIVERY : 0;
 
-        if (status === 'DELIVERED') {
+        try {
+          await prisma.smsLog.create({
+            data: {
+              userId: socket.user.id,
+              taskId,
+              status,
+              amountEarned,
+              sentAt: status === 'SENT' || status === 'DELIVERED' ? new Date() : undefined,
+              deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+            },
+          });
+        } catch (createErr) {
+          // P2002: unique constraint — log already exists for this taskId+status (retry scenario)
+          if (createErr.code !== 'P2002') throw createErr;
+          return;
+        }
+
+        if (shouldCredit) {
           const { wallet } = await creditEarning(socket.user.id, taskId, amountEarned);
+          if (deviceId) {
+            await prisma.device.updateMany({
+              where: { deviceId, userId: socket.user.id },
+              data: { smsSentToday: { increment: 1 } },
+            });
+          }
           socket.emit('balance-updated', { balance: parseFloat(wallet.balance) });
           await checkAndPayReferralBonus(socket.user.id);
         }

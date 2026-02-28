@@ -76,16 +76,26 @@ const reportStatus = async (req, res) => {
     const shouldCredit = (status === 'SENT' || status === 'DELIVERED') && !existingEarningLog;
     const amountEarned = shouldCredit ? constants.SMS_RATE_PER_DELIVERY : 0;
 
-    const log = await prisma.smsLog.create({
-      data: {
-        userId: req.user.id,
-        taskId,
-        status,
-        amountEarned,
-        sentAt: status === 'SENT' || status === 'DELIVERED' ? new Date() : undefined,
-        deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
-      },
-    });
+    let log;
+    try {
+      log = await prisma.smsLog.create({
+        data: {
+          userId: req.user.id,
+          taskId,
+          status,
+          amountEarned,
+          sentAt: status === 'SENT' || status === 'DELIVERED' ? new Date() : undefined,
+          deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+        },
+      });
+    } catch (createErr) {
+      // P2002: unique constraint violation — log already exists for this taskId+status (retry scenario)
+      if (createErr.code === 'P2002') {
+        log = await prisma.smsLog.findFirst({ where: { taskId, status } });
+        return successResponse(res, { log, amountEarned: 0 });
+      }
+      throw createErr;
+    }
 
     if (shouldCredit) {
       await creditEarning(req.user.id, taskId, amountEarned);
@@ -184,7 +194,29 @@ const getBatchTasks = async (req, res) => {
     });
 
     if (existing.length > 0) {
-      return successResponse(res, { tasks: existing, roundLimit });
+      // Reset stale ASSIGNED tasks (older than 5 minutes) so they can be re-assigned
+      const staleThreshold = new Date(Date.now() - 5 * 60 * 1000);
+      const staleIds = [];
+      const fresh = [];
+      for (const t of existing) {
+        if (t.assignedAt && t.assignedAt < staleThreshold) {
+          staleIds.push(t.id);
+        } else {
+          fresh.push(t);
+        }
+      }
+      if (staleIds.length > 0) {
+        await prisma.smsTask.updateMany({
+          where: { id: { in: staleIds } },
+          data: { status: 'QUEUED', assignedToId: null, assignedDeviceId: null, assignedAt: null },
+        });
+        if (fresh.length > 0) {
+          return successResponse(res, { tasks: fresh, roundLimit });
+        }
+        // All were stale — fall through to assign new tasks below
+      } else {
+        return successResponse(res, { tasks: existing, roundLimit });
+      }
     }
 
     const tasks = await prisma.$transaction(async (tx) => {
@@ -196,17 +228,18 @@ const getBatchTasks = async (req, res) => {
 
       if (queued.length === 0) return [];
 
+      const now = new Date();
       await tx.smsTask.updateMany({
         where: { id: { in: queued.map((t) => t.id) } },
         data: {
           status: 'ASSIGNED',
           assignedToId: req.user.id,
           assignedDeviceId: device.id,
-          assignedAt: new Date(),
+          assignedAt: now,
         },
       });
 
-      return queued;
+      return queued.map((t) => ({ ...t, status: 'ASSIGNED', assignedToId: req.user.id, assignedDeviceId: device.id, assignedAt: now }));
     });
 
     return successResponse(res, { tasks, roundLimit });
