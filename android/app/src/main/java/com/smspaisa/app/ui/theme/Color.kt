@@ -2,10 +2,10 @@ package com.smspaisa.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary - Blue
-val Blue40 = Color(0xFF2196F3)
-val Blue80 = Color(0xFF90CAF9)
-val Blue20 = Color(0xFF0D47A1)
+// Primary - Coral/Terracotta
+val Coral40 = Color(0xFFE07A5F)
+val Coral80 = Color(0xFFF2B5A0)
+val Coral20 = Color(0xFF9C4A32)
 
 // Secondary - Green
 val Green40 = Color(0xFF4CAF50)
@@ -31,7 +31,7 @@ val Grey99 = Color(0xFFFCFCFF)
 
 // Status colors
 val StatusDelivered = Color(0xFF4CAF50)
-val StatusSent = Color(0xFF2196F3)
+val StatusSent = Color(0xFF5C9EAD)
 val StatusFailed = Color(0xFFF44336)
 val StatusPending = Color(0xFFFF9800)
 
