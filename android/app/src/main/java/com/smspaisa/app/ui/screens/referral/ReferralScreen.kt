@@ -3,12 +3,14 @@ package com.smspaisa.app.ui.screens.referral
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +51,7 @@ fun ReferralScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Referral Program") },
@@ -56,7 +59,8 @@ fun ReferralScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -78,8 +82,9 @@ fun ReferralScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                                containerColor = Color.White.copy(alpha = 0.85f)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxWidth().padding(20.dp),
@@ -177,7 +182,11 @@ fun ReferralScreen(
 
 @Composable
 private fun ReferralStatCard(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.85f)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -190,7 +199,11 @@ private fun ReferralStatCard(label: String, value: String, modifier: Modifier = 
 
 @Composable
 private fun ReferralItem(referral: ReferralEntry) {
-    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.85f)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,

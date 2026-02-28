@@ -9,12 +9,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -95,6 +97,7 @@ fun HomeScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -110,11 +113,12 @@ fun HomeScreen(
                     IconButton(onClick = {}) {
                         Icon(Icons.Default.Notifications, contentDescription = "Notifications")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = Color.White.copy(alpha = 0.7f)) {
                 NavigationBarItem(
                     selected = true,
                     onClick = {},
@@ -218,8 +222,9 @@ fun HomeScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                )
+                                    containerColor = Color.White.copy(alpha = 0.85f)
+                                ),
+                                shape = RoundedCornerShape(16.dp)
                             ) {
                                 Box(
                                     modifier = Modifier

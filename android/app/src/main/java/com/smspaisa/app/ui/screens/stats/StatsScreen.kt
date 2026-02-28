@@ -2,12 +2,14 @@ package com.smspaisa.app.ui.screens.stats
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,6 +34,7 @@ fun StatsScreen(
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Statistics") },
@@ -44,11 +47,12 @@ fun StatsScreen(
                     IconButton(onClick = { viewModel.loadStats(selectedPeriod) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = Color.White.copy(alpha = 0.7f)) {
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToHome,
@@ -96,8 +100,9 @@ fun StatsScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                                containerColor = Color.White.copy(alpha = 0.85f)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
@@ -139,8 +144,9 @@ fun StatsScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            )
+                                containerColor = Color.White.copy(alpha = 0.85f)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(

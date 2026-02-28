@@ -34,3 +34,7 @@ val StatusDelivered = Color(0xFF4CAF50)
 val StatusSent = Color(0xFF2196F3)
 val StatusFailed = Color(0xFFF44336)
 val StatusPending = Color(0xFFFF9800)
+
+// Gradient background
+val WarmBeige = Color(0xFFF3E6D8)
+val SoftPink = Color(0xFFF8D6D6)
