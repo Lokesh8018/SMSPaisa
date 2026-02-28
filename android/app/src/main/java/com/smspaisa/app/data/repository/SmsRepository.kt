@@ -1,6 +1,7 @@
 package com.smspaisa.app.data.repository
 
 import com.smspaisa.app.data.api.ApiService
+import com.smspaisa.app.data.api.BatchTasksResponse
 import com.smspaisa.app.data.api.ReportStatusRequest
 import com.smspaisa.app.data.local.SmsLogDao
 import com.smspaisa.app.data.local.SmsLogEntity
@@ -32,6 +33,19 @@ class SmsRepository @Inject constructor(
                 Result.success(response.body()?.data)
             } else {
                 Result.failure(Exception("Failed to get next task"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getBatchTasks(deviceId: String): Result<BatchTasksResponse> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.getBatchTasks(deviceId)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(response.body()!!.data!!)
+            } else {
+                Result.failure(Exception(response.body()?.error?.message ?: "Failed to get batch tasks"))
             }
         } catch (e: Exception) {
             Result.failure(e)

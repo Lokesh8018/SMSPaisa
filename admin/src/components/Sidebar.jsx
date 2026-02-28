@@ -9,6 +9,7 @@ const navItems = [
   { to: '/withdrawals', label: 'Withdrawals', icon: '💰' },
   { to: '/devices', label: 'Devices', icon: '📲' },
   { to: '/transactions', label: 'Transactions', icon: '💳' },
+  { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export default function Sidebar() {

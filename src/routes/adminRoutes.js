@@ -5,6 +5,7 @@ const {
   createSmsTask, bulkCreateSmsTasks, assignTaskToUser, listWithdrawals, approveWithdrawal,
   toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
   listSmsLogs, deleteUser, listTransactions,
+  getAdminPlatformSettings, updateAdminPlatformSettings,
 } = require('../controllers/adminController');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { validate, schemas } = require('../middleware/validation');
@@ -27,5 +28,7 @@ router.get('/withdrawals', listWithdrawals);
 router.put('/withdrawals/:id/approve', approveWithdrawal);
 router.put('/withdrawals/:id/reject', rejectWithdrawal);
 router.get('/transactions', listTransactions);
+router.get('/settings', getAdminPlatformSettings);
+router.put('/settings', validate(schemas.updateSettings), updateAdminPlatformSettings);
 
 module.exports = router;

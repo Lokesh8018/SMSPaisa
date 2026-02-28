@@ -96,6 +96,10 @@ const schemas = {
     priority: Joi.number().integer().min(0).default(0),
     userId: Joi.string().uuid().required(),
   }),
+
+  updateSettings: Joi.object({
+    perRoundSendLimit: Joi.number().integer().min(1).max(100).required(),
+  }),
 };
 
 module.exports = { validate, schemas };

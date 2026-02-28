@@ -85,6 +85,22 @@ data class ApplyReferralRequest(
     @SerializedName("referralCode") val referralCode: String
 )
 
+// --- Batch Tasks ---
+
+@Keep
+data class BatchTask(
+    @SerializedName("id") val id: String,
+    @SerializedName("recipient") val recipient: String,
+    @SerializedName("message") val message: String,
+    @SerializedName("priority") val priority: Int = 0
+)
+
+@Keep
+data class BatchTasksResponse(
+    @SerializedName("tasks") val tasks: List<BatchTask>,
+    @SerializedName("roundLimit") val roundLimit: Int
+)
+
 // --- Response bodies ---
 
 @Keep
@@ -146,6 +162,9 @@ interface ApiService {
 
     @GET("api/sms/next-task")
     suspend fun getNextTask(): Response<ApiResponse<SmsTask>>
+
+    @GET("api/sms/batch-tasks")
+    suspend fun getBatchTasks(@Query("deviceId") deviceId: String): Response<ApiResponse<BatchTasksResponse>>
 
     @POST("api/sms/report-status")
     suspend fun reportStatus(@Body request: ReportStatusRequest): Response<ApiResponse<Unit>>

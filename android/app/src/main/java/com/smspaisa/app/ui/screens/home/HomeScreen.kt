@@ -34,6 +34,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val permissionsNeeded by viewModel.permissionsNeeded.collectAsState()
+    val sendingProgress by viewModel.sendingProgress.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarScope = rememberCoroutineScope()
@@ -151,8 +152,12 @@ fun HomeScreen(
                         EarningToggle(
                             isActive = state.serviceEnabled,
                             onToggle = { viewModel.toggleService(it) },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            sendingProgress = sendingProgress
                         )
+                    }
+                    item {
+                        SendingProgressCard(progress = sendingProgress)
                     }
                     item {
                         Text(
