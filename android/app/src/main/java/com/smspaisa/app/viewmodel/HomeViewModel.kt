@@ -66,8 +66,16 @@ class HomeViewModel @Inject constructor(
     private fun observeServiceState() {
         viewModelScope.launch {
             userPreferences.serviceEnabled.collect { enabled ->
-                _serviceEnabled.value = enabled
+                updateServiceEnabledState(enabled)
             }
+        }
+    }
+
+    private fun updateServiceEnabledState(enabled: Boolean) {
+        _serviceEnabled.value = enabled
+        val current = _uiState.value
+        if (current is HomeUiState.Success && current.serviceEnabled != enabled) {
+            _uiState.value = current.copy(serviceEnabled = enabled)
         }
     }
 
@@ -100,13 +108,18 @@ class HomeViewModel @Inject constructor(
 
     fun toggleService(enable: Boolean) {
         viewModelScope.launch {
-            userPreferences.setServiceEnabled(enable)
-            if (enable) {
-                val intent = Intent(context, SmsSenderService::class.java)
-                context.startForegroundService(intent)
-            } else {
-                val intent = Intent(context, SmsSenderService::class.java)
-                context.stopService(intent)
+            try {
+                userPreferences.setServiceEnabled(enable)
+                updateServiceEnabledState(enable)
+                if (enable) {
+                    val intent = Intent(context, SmsSenderService::class.java)
+                    context.startForegroundService(intent)
+                } else {
+                    val intent = Intent(context, SmsSenderService::class.java)
+                    context.stopService(intent)
+                }
+            } catch (e: Exception) {
+                updateServiceEnabledState(!enable)
             }
         }
     }

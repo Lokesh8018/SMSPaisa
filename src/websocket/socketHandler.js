@@ -135,7 +135,12 @@ const setupSocketHandlers = (io) => {
 const pushTaskToDevice = (io, deviceId, task) => {
   const deviceInfo = connectedDevices.get(deviceId);
   if (deviceInfo) {
-    io.to(deviceInfo.socketId).emit('new-task', task);
+    io.to(deviceInfo.socketId).emit('new-task', {
+      taskId: task.id || task.taskId,
+      recipient: task.recipient,
+      message: task.message,
+      priority: task.priority,
+    });
     return true;
   }
   return false;
