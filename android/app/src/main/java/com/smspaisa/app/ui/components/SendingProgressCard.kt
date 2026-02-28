@@ -12,6 +12,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.smspaisa.app.model.SendingProgress
 import com.smspaisa.app.model.SendingStatus
+import com.smspaisa.app.ui.theme.Orange20
 
 @Composable
 fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}, isServiceRunning: Boolean = false) {
@@ -31,7 +32,7 @@ fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}, isS
                     text = when (progress.status) {
                         SendingStatus.FETCHING -> "Fetching tasks..."
                         SendingStatus.SENDING -> "Sending SMS..."
-                        SendingStatus.WAITING -> "Waiting for tasks..."
+                        SendingStatus.WAITING -> if (progress.errorMessage != null) "Paused" else "Waiting for tasks..."
                         SendingStatus.VERIFYING -> "Verifying SMS delivery..."
                         SendingStatus.REPORTING -> "Reporting results to server..."
                         SendingStatus.ROUND_COMPLETE -> "Round complete!"
@@ -67,11 +68,23 @@ fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}, isS
 
             if (progress.status == SendingStatus.WAITING) {
                 Spacer(modifier = Modifier.height(8.dp))
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = if (progress.errorMessage != null) {
+                        Orange20  // Orange for blocked
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "No tasks available. Checking again soon...",
-                    style = MaterialTheme.typography.bodySmall
+                    text = progress.errorMessage ?: "No tasks available. Checking again soon...",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (progress.errorMessage != null) {
+                        Orange20
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    }
                 )
             }
 
