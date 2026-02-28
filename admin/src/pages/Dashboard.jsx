@@ -64,7 +64,7 @@ export default function Dashboard() {
         />
         <StatCard
           title="Total Earnings"
-          value={`₹${(stats?.totalEarnings || 0).toFixed(2)}`}
+          value={`₹${parseFloat(stats?.totalEarnings || 0).toFixed(2)}`}
           icon={<span className="text-xl">💰</span>}
           color="green"
         />

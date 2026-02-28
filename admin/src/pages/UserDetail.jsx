@@ -89,15 +89,15 @@ export default function UserDetail() {
           <h4 className="font-semibold text-gray-700 mb-4">Wallet</h4>
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">₹{user.wallet.balance?.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-green-600">₹{parseFloat(user.wallet.balance || 0).toFixed(2)}</p>
               <p className="text-sm text-gray-500">Balance</p>
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">₹{user.wallet.totalEarned?.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-blue-600">₹{parseFloat(user.wallet.totalEarned || 0).toFixed(2)}</p>
               <p className="text-sm text-gray-500">Total Earned</p>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <p className="text-2xl font-bold text-purple-600">₹{user.wallet.totalWithdrawn?.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-purple-600">₹{parseFloat(user.wallet.totalWithdrawn || 0).toFixed(2)}</p>
               <p className="text-sm text-gray-500">Total Withdrawn</p>
             </div>
           </div>
