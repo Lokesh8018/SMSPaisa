@@ -1,5 +1,6 @@
 package com.smspaisa.app.data.api
 
+import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 import com.smspaisa.app.model.*
 import retrofit2.Response
@@ -7,6 +8,7 @@ import retrofit2.http.*
 
 // --- Request bodies ---
 
+@Keep
 data class RegisterRequest(
     @SerializedName("phone") val phone: String,
     @SerializedName("email") val email: String?,
@@ -14,16 +16,19 @@ data class RegisterRequest(
     @SerializedName("deviceId") val deviceId: String
 )
 
+@Keep
 data class LoginRequest(
     @SerializedName("phone") val phone: String,
     @SerializedName("password") val password: String
 )
 
+@Keep
 data class UpdateProfileRequest(
     @SerializedName("name") val name: String?,
     @SerializedName("email") val email: String?
 )
 
+@Keep
 data class ReportStatusRequest(
     @SerializedName("taskId") val taskId: String,
     @SerializedName("status") val status: String,
@@ -31,17 +36,20 @@ data class ReportStatusRequest(
     @SerializedName("errorMessage") val errorMessage: String? = null
 )
 
+@Keep
 data class WithdrawalRequest(
     @SerializedName("amount") val amount: Double,
     @SerializedName("paymentMethod") val paymentMethod: String,
     @SerializedName("paymentDetails") val paymentDetails: Map<String, String>
 )
 
+@Keep
 data class AddUpiRequest(
     @SerializedName("upiId") val upiId: String,
     @SerializedName("name") val name: String
 )
 
+@Keep
 data class AddBankRequest(
     @SerializedName("accountNumber") val accountNumber: String,
     @SerializedName("ifsc") val ifsc: String,
@@ -49,12 +57,14 @@ data class AddBankRequest(
     @SerializedName("bankName") val bankName: String
 )
 
+@Keep
 data class RegisterDeviceRequest(
     @SerializedName("deviceId") val deviceId: String,
     @SerializedName("deviceName") val deviceName: String,
     @SerializedName("simInfo") val simInfo: Map<String, Any?>?
 )
 
+@Keep
 data class UpdateDeviceSettingsRequest(
     @SerializedName("deviceId") val deviceId: String,
     @SerializedName("dailyLimit") val dailyLimit: Int?,
@@ -62,6 +72,7 @@ data class UpdateDeviceSettingsRequest(
     @SerializedName("activeHoursEnd") val activeHoursEnd: String?
 )
 
+@Keep
 data class HeartbeatRequest(
     @SerializedName("deviceId") val deviceId: String,
     @SerializedName("batteryLevel") val batteryLevel: Int,
@@ -69,23 +80,27 @@ data class HeartbeatRequest(
     @SerializedName("networkType") val networkType: String
 )
 
+@Keep
 data class ApplyReferralRequest(
     @SerializedName("referralCode") val referralCode: String
 )
 
 // --- Response bodies ---
 
+@Keep
 data class AuthResponse(
     @SerializedName("token") val token: String,
     @SerializedName("user") val user: User
 )
 
+@Keep
 data class WithdrawalResponse(
     @SerializedName("id") val id: String,
     @SerializedName("status") val status: String,
     @SerializedName("message") val message: String
 )
 
+@Keep
 data class PaymentAccount(
     @SerializedName("id") val id: String,
     @SerializedName("type") val type: String,
@@ -93,6 +108,7 @@ data class PaymentAccount(
     @SerializedName("isVerified") val isVerified: Boolean
 )
 
+@Keep
 data class ReferralStats(
     @SerializedName("referralCode") val referralCode: String,
     @SerializedName("totalReferrals") val totalReferrals: Int,
@@ -101,6 +117,7 @@ data class ReferralStats(
     @SerializedName("referrals") val referrals: List<ReferralEntry>
 )
 
+@Keep
 data class ReferralEntry(
     @SerializedName("id") val id: String,
     @SerializedName("name") val name: String,
