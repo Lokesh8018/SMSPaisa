@@ -1,8 +1,10 @@
 package com.smspaisa.app.service
 
+import android.Manifest
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.BatteryManager
@@ -11,6 +13,7 @@ import android.os.IBinder
 import android.telephony.SmsManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.smspaisa.app.R
 import com.smspaisa.app.data.api.WebSocketManager
 import com.smspaisa.app.data.datastore.UserPreferences
@@ -41,6 +44,7 @@ class SmsSenderService : Service() {
         const val TAG = "SmsSenderService"
         private const val SMS_DELAY_MIN_MILLIS = 3000L
         private const val SMS_DELAY_MAX_MILLIS = 5000L
+        private const val MIN_PHONE_NUMBER_DIGITS = 5
     }
 
     override fun onCreate() {
@@ -95,6 +99,32 @@ class SmsSenderService : Service() {
             if (sentTodayCount.get() >= dailyLimit) {
                 updateNotification("Daily limit reached (${sentTodayCount.get()}/$dailyLimit)")
                 webSocketManager.emitTaskResult(task.taskId, "SKIPPED")
+                webSocketManager.clearNewTask()
+                return@collect
+            }
+
+            // Validate recipient phone number
+            val recipientTrimmed = task.recipient.trim()
+            if (recipientTrimmed.isBlank() || recipientTrimmed.filter { it.isDigit() }.length < MIN_PHONE_NUMBER_DIGITS) {
+                Log.w(TAG, "Invalid recipient phone number for task: ${task.taskId}")
+                webSocketManager.emitTaskResult(task.taskId, "FAILED", "Invalid recipient phone number")
+                webSocketManager.clearNewTask()
+                return@collect
+            }
+
+            // Validate message content
+            if (task.message.isBlank()) {
+                Log.w(TAG, "Empty message content for task: ${task.taskId}")
+                webSocketManager.emitTaskResult(task.taskId, "FAILED", "Empty message content")
+                webSocketManager.clearNewTask()
+                return@collect
+            }
+
+            // Verify SEND_SMS permission before attempting to send
+            if (ContextCompat.checkSelfPermission(this@SmsSenderService, Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "SEND_SMS permission not granted, cannot send SMS")
+                webSocketManager.emitTaskResult(task.taskId, "FAILED", "SEND_SMS permission not granted")
                 webSocketManager.clearNewTask()
                 return@collect
             }
@@ -231,7 +261,12 @@ class SmsSenderService : Service() {
             if (preferredSim > 0) {
                 // Get SmsManager for the specific SIM subscription
                 val subscriptionManager = getSystemService(android.telephony.SubscriptionManager::class.java)
-                val subscriptions = subscriptionManager?.activeSubscriptionInfoList
+                val subscriptions = try {
+                    subscriptionManager?.activeSubscriptionInfoList
+                } catch (e: SecurityException) {
+                    Log.w(TAG, "Failed to get subscription info, falling back to default SmsManager", e)
+                    null
+                }
                 val targetIndex = preferredSim - 1  // preferredSim: 1=SIM1, 2=SIM2
                 val subId = subscriptions?.getOrNull(targetIndex)?.subscriptionId
                 if (subId != null) {
