@@ -24,7 +24,7 @@ const getNextTask = async (req, res) => {
 
 const reportStatus = async (req, res) => {
   try {
-    const { taskId, status, deviceId } = req.body;
+    const { taskId, status, deviceId, errorMessage } = req.body;
 
     const task = await prisma.smsTask.findFirst({
       where: { id: taskId, assignedToId: req.user.id },
@@ -34,19 +34,47 @@ const reportStatus = async (req, res) => {
       return errorResponse(res, 'Task not found or not assigned to you', 'NOT_FOUND', 404);
     }
 
+    // Block terminal statuses
     if (task.status === 'DELIVERED' || task.status === 'FAILED') {
+      return errorResponse(res, 'Task already in terminal status', 'CONFLICT', 409);
+    }
+
+    // Block same-status re-reports (e.g., SENT → SENT)
+    if (task.status === status) {
       return errorResponse(res, 'Task status already reported', 'CONFLICT', 409);
+    }
+
+    // Only allow valid transitions:
+    // ASSIGNED → SENT, ASSIGNED → DELIVERED, ASSIGNED → FAILED
+    // SENT → DELIVERED, SENT → FAILED
+    const validTransitions = {
+      'ASSIGNED': ['SENT', 'DELIVERED', 'FAILED'],
+      'SENT': ['DELIVERED', 'FAILED'],
+    };
+
+    const allowed = validTransitions[task.status];
+    if (!allowed || !allowed.includes(status)) {
+      return errorResponse(res, `Invalid status transition from ${task.status} to ${status}`, 'INVALID_TRANSITION', 400);
     }
 
     const updateData = {
       status,
-      sentAt: status === 'SENT' || status === 'DELIVERED' ? new Date() : undefined,
-      deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+      sentAt: (status === 'SENT' || status === 'DELIVERED') && !task.sentAt ? new Date() : task.sentAt,
+      deliveredAt: status === 'DELIVERED' ? new Date() : task.deliveredAt,
     };
 
     await prisma.smsTask.update({ where: { id: taskId }, data: updateData });
 
-    const amountEarned = (status === 'SENT' || status === 'DELIVERED') ? constants.SMS_RATE_PER_DELIVERY : 0;
+    // Check if earnings were already credited for this task (only needed for successful statuses)
+    const existingEarningLog = (status === 'SENT' || status === 'DELIVERED')
+      ? await prisma.smsLog.findFirst({
+          where: { taskId, userId: req.user.id, amountEarned: { gt: 0 } },
+        })
+      : null;
+
+    // Only credit earnings on first successful status (SENT or DELIVERED), never twice
+    const shouldCredit = (status === 'SENT' || status === 'DELIVERED') && !existingEarningLog;
+    const amountEarned = shouldCredit ? constants.SMS_RATE_PER_DELIVERY : 0;
 
     const log = await prisma.smsLog.create({
       data: {
@@ -54,12 +82,12 @@ const reportStatus = async (req, res) => {
         taskId,
         status,
         amountEarned,
-        sentAt: status === 'DELIVERED' ? new Date() : undefined,
+        sentAt: status === 'SENT' || status === 'DELIVERED' ? new Date() : undefined,
         deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
       },
     });
 
-    if (status === 'SENT' || status === 'DELIVERED') {
+    if (shouldCredit) {
       await creditEarning(req.user.id, taskId, amountEarned);
       await prisma.device.updateMany({
         where: { deviceId, userId: req.user.id },

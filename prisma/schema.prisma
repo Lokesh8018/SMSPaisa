@@ -104,6 +104,8 @@ model SmsLog {
   sentAt       DateTime?
   deliveredAt  DateTime?
   createdAt    DateTime  @default(now())
+
+  @@unique([taskId, status])
 }
 
 model Transaction {
