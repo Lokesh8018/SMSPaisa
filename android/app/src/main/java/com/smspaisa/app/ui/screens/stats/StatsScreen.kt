@@ -52,7 +52,7 @@ fun StatsScreen(
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White.copy(alpha = 0.7f)) {
+            NavigationBar(containerColor = Color.Transparent) {
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToHome,

@@ -70,7 +70,7 @@ fun WithdrawScreen(
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White.copy(alpha = 0.7f)) {
+            NavigationBar(containerColor = Color.Transparent) {
                 NavigationBarItem(false, onNavigateToHome, { Icon(painterResource(R.drawable.ic_nav_home), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Home") })
                 NavigationBarItem(false, onNavigateToStats, { Icon(painterResource(R.drawable.ic_nav_stats), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Stats") })
                 NavigationBarItem(true, {}, { Icon(painterResource(R.drawable.ic_nav_withdraw), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Withdraw") })
