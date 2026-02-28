@@ -369,9 +369,40 @@ const listTransactions = async (req, res) => {
   }
 };
 
+const getAdminPlatformSettings = async (req, res) => {
+  try {
+    let settings = await prisma.platformSettings.findFirst({ where: { id: 'default' } });
+    if (!settings) {
+      settings = await prisma.platformSettings.create({
+        data: { id: 'default', perRoundSendLimit: 25 },
+      });
+    }
+    return successResponse(res, { settings });
+  } catch (err) {
+    console.error('getAdminPlatformSettings error:', err);
+    return errorResponse(res, 'Failed to get settings', 'SERVER_ERROR', 500);
+  }
+};
+
+const updateAdminPlatformSettings = async (req, res) => {
+  try {
+    const { perRoundSendLimit } = req.body;
+    const settings = await prisma.platformSettings.upsert({
+      where: { id: 'default' },
+      update: { perRoundSendLimit },
+      create: { id: 'default', perRoundSendLimit },
+    });
+    return successResponse(res, { settings });
+  } catch (err) {
+    console.error('updateAdminPlatformSettings error:', err);
+    return errorResponse(res, 'Failed to update settings', 'SERVER_ERROR', 500);
+  }
+};
+
 module.exports = {
   listUsers, getUserById, getPlatformStats, getOnlineDevices,
   createSmsTask, bulkCreateSmsTasks, assignTaskToUser, listWithdrawals, approveWithdrawal,
   toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
   listSmsLogs, deleteUser, listTransactions,
+  getAdminPlatformSettings, updateAdminPlatformSettings,
 };

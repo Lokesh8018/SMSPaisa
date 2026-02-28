@@ -12,9 +12,11 @@ import com.smspaisa.app.data.api.WebSocketManager
 import com.smspaisa.app.data.datastore.UserPreferences
 import com.smspaisa.app.data.repository.SmsRepository
 import com.smspaisa.app.data.repository.WalletRepository
+import com.smspaisa.app.model.SendingProgress
 import com.smspaisa.app.model.SmsLog
 import com.smspaisa.app.model.TodayStats
 import com.smspaisa.app.model.Wallet
+import com.smspaisa.app.service.SendingProgressManager
 import com.smspaisa.app.service.SmsSenderService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -43,6 +45,7 @@ class HomeViewModel @Inject constructor(
     private val smsRepository: SmsRepository,
     private val userPreferences: UserPreferences,
     private val webSocketManager: WebSocketManager,
+    private val sendingProgressManager: SendingProgressManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -51,6 +54,8 @@ class HomeViewModel @Inject constructor(
 
     private val _serviceEnabled = MutableStateFlow(false)
     val serviceEnabled: StateFlow<Boolean> = _serviceEnabled.asStateFlow()
+
+    val sendingProgress: StateFlow<SendingProgress> = sendingProgressManager.progress
 
     init {
         loadData()

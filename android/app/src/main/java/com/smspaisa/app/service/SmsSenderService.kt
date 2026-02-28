@@ -19,6 +19,8 @@ import com.smspaisa.app.data.api.WebSocketManager
 import com.smspaisa.app.data.datastore.UserPreferences
 import com.smspaisa.app.data.repository.DeviceRepository
 import com.smspaisa.app.data.repository.SmsRepository
+import com.smspaisa.app.model.SendingProgress
+import com.smspaisa.app.model.SendingStatus
 import com.smspaisa.app.model.SmsStatus
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
@@ -34,6 +36,7 @@ class SmsSenderService : Service() {
     @Inject lateinit var userPreferences: UserPreferences
     @Inject lateinit var smsRepository: SmsRepository
     @Inject lateinit var deviceRepository: DeviceRepository
+    @Inject lateinit var sendingProgressManager: SendingProgressManager
 
     private val serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sentTodayCount = AtomicInteger(0)
@@ -63,6 +66,7 @@ class SmsSenderService : Service() {
             startForeground(NOTIFICATION_ID, buildNotification("SMSPaisa running..."))
         }
         serviceScope.launch { startWorking() }
+        serviceScope.launch { startBatchPolling() }
         serviceScope.launch { startHeartbeat() }
         serviceScope.launch { observeTaskCancelled() }
         return START_STICKY
@@ -73,6 +77,7 @@ class SmsSenderService : Service() {
     override fun onDestroy() {
         serviceScope.cancel()
         webSocketManager.disconnect()
+        sendingProgressManager.reset()
         super.onDestroy()
     }
 
@@ -193,6 +198,128 @@ class SmsSenderService : Service() {
             cancelledTaskId ?: return@collect
             Log.d(TAG, "Task cancelled by server: $cancelledTaskId")
             smsRepository.updateLocalLogStatus(cancelledTaskId, SmsStatus.FAILED)
+        }
+    }
+
+    private suspend fun startBatchPolling() {
+        val deviceId = deviceRepository.getDeviceId()
+        while (true) {
+            if (!shouldSendSms()) {
+                delay(10_000)
+                continue
+            }
+
+            sendingProgressManager.updateProgress(SendingProgress(status = SendingStatus.FETCHING))
+
+            val result = smsRepository.getBatchTasks(deviceId)
+            if (result.isFailure) {
+                sendingProgressManager.updateProgress(SendingProgress(status = SendingStatus.ERROR))
+                delay(10_000)
+                continue
+            }
+
+            val batchResponse = result.getOrThrow()
+            val tasks = batchResponse.tasks
+            val roundLimit = batchResponse.roundLimit
+
+            if (tasks.isEmpty()) {
+                sendingProgressManager.updateProgress(
+                    SendingProgress(status = SendingStatus.WAITING, roundLimit = roundLimit)
+                )
+                delay(10_000)
+                continue
+            }
+
+            val dailyLimit = userPreferences.dailySmsLimit.first()
+            sendingProgressManager.updateProgress(
+                SendingProgress(
+                    status = SendingStatus.SENDING,
+                    totalInRound = tasks.size,
+                    sentInRound = 0,
+                    roundLimit = roundLimit
+                )
+            )
+
+            for ((index, task) in tasks.withIndex()) {
+                if (sentTodayCount.get() >= dailyLimit) {
+                    updateNotification("Daily limit reached (${sentTodayCount.get()}/$dailyLimit)")
+                    break
+                }
+
+                sendingProgressManager.updateProgress(
+                    SendingProgress(
+                        status = SendingStatus.SENDING,
+                        totalInRound = tasks.size,
+                        sentInRound = index,
+                        currentRecipient = SendingProgressManager.maskPhone(task.recipient),
+                        currentMessagePreview = SendingProgressManager.maskMessage(task.message),
+                        roundLimit = roundLimit
+                    )
+                )
+
+                if (ContextCompat.checkSelfPermission(this@SmsSenderService, Manifest.permission.SEND_SMS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                    smsRepository.reportStatus(task.id, "FAILED", deviceId, "SEND_SMS permission not granted")
+                    continue
+                }
+
+                delay((SMS_DELAY_MIN_MILLIS..SMS_DELAY_MAX_MILLIS).random())
+
+                try {
+                    val smsManager = getSmsManager()
+                    val pendingIntentSent = PendingIntent.getBroadcast(
+                        this@SmsSenderService,
+                        task.id.hashCode(),
+                        Intent(SmsSentReceiver.ACTION_SMS_SENT).apply {
+                            putExtra("taskId", task.id)
+                            `package` = packageName
+                        },
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    val pendingIntentDelivered = PendingIntent.getBroadcast(
+                        this@SmsSenderService,
+                        task.id.hashCode() + 1,
+                        Intent(SmsDeliveryReceiver.ACTION_SMS_DELIVERED).apply {
+                            putExtra("taskId", task.id)
+                            `package` = packageName
+                        },
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+
+                    smsRepository.insertLocalLog(
+                        taskId = task.id,
+                        recipient = task.recipient,
+                        message = task.message,
+                        status = SmsStatus.PENDING
+                    )
+
+                    val parts = smsManager.divideMessage(task.message)
+                    if (parts.size == 1) {
+                        smsManager.sendTextMessage(
+                            task.recipient, null, task.message,
+                            pendingIntentSent, pendingIntentDelivered
+                        )
+                    } else {
+                        val sentList = ArrayList(parts.map { pendingIntentSent })
+                        val deliveredList = ArrayList(parts.map { pendingIntentDelivered })
+                        smsManager.sendMultipartTextMessage(
+                            task.recipient, null, parts, sentList, deliveredList
+                        )
+                    }
+
+                    sentTodayCount.incrementAndGet()
+                    updateNotification("Sending SMS... (${index + 1}/$roundLimit)")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Batch: Failed to send SMS for task ${task.id}", e)
+                    smsRepository.updateLocalLogStatus(task.id, SmsStatus.FAILED)
+                    smsRepository.reportStatus(task.id, "FAILED", deviceId, e.message)
+                }
+            }
+
+            sendingProgressManager.updateProgress(
+                SendingProgress(status = SendingStatus.ROUND_COMPLETE, roundLimit = roundLimit)
+            )
+            delay(2_000)
         }
     }
 

@@ -149,3 +149,9 @@ model Referral {
   referredBonus  Decimal  @default(5.00)  @db.Decimal(10, 2)
   createdAt      DateTime @default(now())
 }
+
+model PlatformSettings {
+  id                String   @id @default("default")
+  perRoundSendLimit Int      @default(25)
+  updatedAt         DateTime @updatedAt
+}

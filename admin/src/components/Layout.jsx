@@ -11,6 +11,7 @@ const pageTitles = {
   '/withdrawals': 'Withdrawals',
   '/devices': 'Devices',
   '/transactions': 'Transactions',
+  '/settings': 'Settings',
 };
 
 export default function Layout({ children }) {

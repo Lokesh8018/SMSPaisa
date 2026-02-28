@@ -13,6 +13,7 @@ import SmsLogs from './pages/SmsLogs';
 import Withdrawals from './pages/Withdrawals';
 import Devices from './pages/Devices';
 import Transactions from './pages/Transactions';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
                   <Route path="/withdrawals" element={<Withdrawals />} />
                   <Route path="/devices" element={<Devices />} />
                   <Route path="/transactions" element={<Transactions />} />
+                  <Route path="/settings" element={<Settings />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

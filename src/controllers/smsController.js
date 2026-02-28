@@ -34,6 +34,10 @@ const reportStatus = async (req, res) => {
       return errorResponse(res, 'Task not found or not assigned to you', 'NOT_FOUND', 404);
     }
 
+    if (task.status === 'DELIVERED' || task.status === 'FAILED') {
+      return errorResponse(res, 'Task status already reported', 'CONFLICT', 409);
+    }
+
     const updateData = {
       status,
       sentAt: status === 'SENT' || status === 'DELIVERED' ? new Date() : undefined,
@@ -132,4 +136,43 @@ const getSmsLog = async (req, res) => {
   }
 };
 
-module.exports = { getNextTask, reportStatus, getTodayStats, getSmsLog };
+const getBatchTasks = async (req, res) => {
+  try {
+    const { deviceId } = req.query;
+    if (!deviceId) {
+      return errorResponse(res, 'deviceId is required', 'VALIDATION_ERROR', 422);
+    }
+
+    const settings = await prisma.platformSettings.findFirst({ where: { id: 'default' } });
+    const roundLimit = settings?.perRoundSendLimit || 25;
+
+    const tasks = await prisma.$transaction(async (tx) => {
+      const queued = await tx.smsTask.findMany({
+        where: { status: 'QUEUED' },
+        orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
+        take: roundLimit,
+      });
+
+      if (queued.length === 0) return [];
+
+      await tx.smsTask.updateMany({
+        where: { id: { in: queued.map((t) => t.id) } },
+        data: {
+          status: 'ASSIGNED',
+          assignedToId: req.user.id,
+          assignedDeviceId: deviceId,
+          assignedAt: new Date(),
+        },
+      });
+
+      return queued;
+    });
+
+    return successResponse(res, { tasks, roundLimit });
+  } catch (err) {
+    console.error('getBatchTasks error:', err);
+    return errorResponse(res, 'Failed to get batch tasks', 'SERVER_ERROR', 500);
+  }
+};
+
+module.exports = { getNextTask, reportStatus, getTodayStats, getSmsLog, getBatchTasks };
