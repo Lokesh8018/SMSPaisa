@@ -33,7 +33,7 @@ const schemas = {
 
   reportStatus: Joi.object({
     taskId: Joi.string().uuid().required(),
-    status: Joi.string().valid('DELIVERED', 'FAILED').required(),
+    status: Joi.string().valid('SENT', 'DELIVERED', 'FAILED').required(),
     deviceId: Joi.string().required(),
   }),
 
