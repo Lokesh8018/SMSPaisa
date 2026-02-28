@@ -93,7 +93,7 @@ fun EarningToggle(
         Text(
             text = if (isActive) {
                 when (sendingProgress.status) {
-                    SendingStatus.SENDING -> "Sending SMS... (${sendingProgress.sentInRound}/${sendingProgress.roundLimit})"
+                    SendingStatus.SENDING -> "Sending SMS... (${sendingProgress.sentInRound}/${sendingProgress.totalInRound})"
                     SendingStatus.WAITING -> "Waiting for tasks..."
                     SendingStatus.FETCHING -> "Fetching tasks..."
                     SendingStatus.ROUND_COMPLETE -> "Round complete!"

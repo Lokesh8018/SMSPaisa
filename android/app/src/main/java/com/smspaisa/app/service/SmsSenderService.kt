@@ -308,7 +308,7 @@ class SmsSenderService : Service() {
                     }
 
                     sentTodayCount.incrementAndGet()
-                    updateNotification("Sending SMS... (${index + 1}/$roundLimit)")
+                    updateNotification("Sending SMS... (${index + 1}/${tasks.size})")
                 } catch (e: Exception) {
                     Log.e(TAG, "Batch: Failed to send SMS for task ${task.id}", e)
                     smsRepository.updateLocalLogStatus(task.id, SmsStatus.FAILED)
