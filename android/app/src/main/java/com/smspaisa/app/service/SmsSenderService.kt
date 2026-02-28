@@ -433,6 +433,7 @@ class SmsSenderService : Service() {
 
             // Wait for user to see the summary, then continue
             delay(ROUND_SUMMARY_DISPLAY_DURATION_MS)
+            sendingProgressManager.updateProgress(SendingProgress(status = SendingStatus.WAITING))
         }
     }
 

@@ -180,7 +180,7 @@ fun HomeScreen(
                         )
                     }
                     item {
-                        SendingProgressCard(progress = sendingProgress, onRetry = { viewModel.retryBatchPolling() })
+                        SendingProgressCard(progress = sendingProgress, onRetry = { viewModel.retryBatchPolling() }, isServiceRunning = state.serviceEnabled)
                     }
                     item {
                         Text(
