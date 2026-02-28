@@ -1,5 +1,6 @@
 package com.smspaisa.app.ui.components
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
