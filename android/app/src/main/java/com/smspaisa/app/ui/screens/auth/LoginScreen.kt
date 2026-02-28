@@ -6,11 +6,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.smspaisa.app.R
 import com.smspaisa.app.viewmodel.AuthUiState
 import com.smspaisa.app.viewmodel.AuthViewModel
 
@@ -38,9 +40,10 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "💸",
-            style = MaterialTheme.typography.displayMedium
+        androidx.compose.foundation.Image(
+            painter = painterResource(id = R.drawable.ic_app_logo),
+            contentDescription = "SMSPaisa Logo",
+            modifier = Modifier.size(64.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(

@@ -1,15 +1,16 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { BarChart3, Users, MessageSquare, ClipboardList, Wallet, Smartphone, CreditCard, Settings } from 'lucide-react';
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: '📊', end: true },
-  { to: '/users', label: 'Users', icon: '👥' },
-  { to: '/sms', label: 'SMS Tasks', icon: '📱' },
-  { to: '/sms/logs', label: 'SMS Logs', icon: '📋' },
-  { to: '/withdrawals', label: 'Withdrawals', icon: '💰' },
-  { to: '/devices', label: 'Devices', icon: '📲' },
-  { to: '/transactions', label: 'Transactions', icon: '💳' },
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
+  { to: '/', label: 'Dashboard', Icon: BarChart3, end: true },
+  { to: '/users', label: 'Users', Icon: Users },
+  { to: '/sms', label: 'SMS Tasks', Icon: MessageSquare },
+  { to: '/sms/logs', label: 'SMS Logs', Icon: ClipboardList },
+  { to: '/withdrawals', label: 'Withdrawals', Icon: Wallet },
+  { to: '/devices', label: 'Devices', Icon: Smartphone },
+  { to: '/transactions', label: 'Transactions', Icon: CreditCard },
+  { to: '/settings', label: 'Settings', Icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -33,7 +34,7 @@ export default function Sidebar() {
               }`
             }
           >
-            <span>{item.icon}</span>
+            <item.Icon className="w-5 h-5" />
             <span>{item.label}</span>
           </NavLink>
         ))}

@@ -1,26 +1,27 @@
 package com.smspaisa.app.ui.components
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.smspaisa.app.R
 import com.smspaisa.app.ui.navigation.Screen
 
 data class BottomNavItem(
     val label: String,
-    val icon: ImageVector,
+    val iconRes: Int,
     val route: String
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem("Home", Icons.Default.Home, Screen.Home.route),
-    BottomNavItem("Stats", Icons.Default.BarChart, Screen.Stats.route),
-    BottomNavItem("Withdraw", Icons.Default.AccountBalanceWallet, Screen.Withdraw.route),
-    BottomNavItem("Profile", Icons.Default.Person, Screen.Profile.route)
+    BottomNavItem("Home", R.drawable.ic_nav_home, Screen.Home.route),
+    BottomNavItem("Stats", R.drawable.ic_nav_stats, Screen.Stats.route),
+    BottomNavItem("Withdraw", R.drawable.ic_nav_withdraw, Screen.Withdraw.route),
+    BottomNavItem("Profile", R.drawable.ic_nav_profile, Screen.Profile.route)
 )
 
 @Composable
@@ -38,8 +39,9 @@ fun BottomNavBar(
                 onClick = { onNavigate(item.route) },
                 icon = {
                     Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.label
+                        painter = painterResource(id = item.iconRes),
+                        contentDescription = item.label,
+                        modifier = Modifier.size(24.dp)
                     )
                 },
                 label = { Text(item.label) }

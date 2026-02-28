@@ -8,9 +8,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.smspaisa.app.R
 import com.smspaisa.app.viewmodel.ProfileUiState
 import com.smspaisa.app.viewmodel.ProfileViewModel
 
@@ -62,10 +64,10 @@ fun ProfileScreen(
         },
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(false, onNavigateToHome, { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
-                NavigationBarItem(false, onNavigateToStats, { Icon(Icons.Default.BarChart, null) }, label = { Text("Stats") })
-                NavigationBarItem(false, onNavigateToWithdraw, { Icon(Icons.Default.AccountBalanceWallet, null) }, label = { Text("Withdraw") })
-                NavigationBarItem(true, {}, { Icon(Icons.Default.Person, null) }, label = { Text("Profile") })
+                NavigationBarItem(false, onNavigateToHome, { Icon(painterResource(R.drawable.ic_nav_home), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Home") })
+                NavigationBarItem(false, onNavigateToStats, { Icon(painterResource(R.drawable.ic_nav_stats), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Stats") })
+                NavigationBarItem(false, onNavigateToWithdraw, { Icon(painterResource(R.drawable.ic_nav_withdraw), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Withdraw") })
+                NavigationBarItem(true, {}, { Icon(painterResource(R.drawable.ic_nav_profile), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Profile") })
             }
         }
     ) { paddingValues ->

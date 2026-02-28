@@ -16,10 +16,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.smspaisa.app.R
 import com.smspaisa.app.ui.components.*
 import com.smspaisa.app.model.SendingStatus
 import com.smspaisa.app.viewmodel.HomeUiState
@@ -116,25 +118,25 @@ fun HomeScreen(
                 NavigationBarItem(
                     selected = true,
                     onClick = {},
-                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_home), contentDescription = null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Home") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToStats,
-                    icon = { Icon(Icons.Default.BarChart, contentDescription = null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_stats), contentDescription = null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Stats") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToWithdraw,
-                    icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_withdraw), contentDescription = null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Withdraw") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToProfile,
-                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_profile), contentDescription = null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Profile") }
                 )
             }
