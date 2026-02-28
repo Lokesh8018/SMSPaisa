@@ -7,9 +7,12 @@ data class SendingProgress(
     val currentRecipient: String = "",
     val currentMessagePreview: String = "",
     val roundLimit: Int = 25,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val roundSent: Int = 0,
+    val roundFailed: Int = 0,
+    val roundEarnings: Double = 0.0
 )
 
 enum class SendingStatus {
-    IDLE, FETCHING, SENDING, WAITING, ROUND_COMPLETE, ERROR
+    IDLE, FETCHING, SENDING, WAITING, REPORTING, ROUND_COMPLETE, ERROR
 }

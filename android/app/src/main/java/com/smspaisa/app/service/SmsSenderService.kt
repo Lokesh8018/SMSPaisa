@@ -48,6 +48,10 @@ class SmsSenderService : Service() {
         private const val SMS_DELAY_MIN_MILLIS = 3000L
         private const val SMS_DELAY_MAX_MILLIS = 5000L
         private const val MIN_PHONE_NUMBER_DIGITS = 5
+        private const val EARNINGS_PER_SMS = 0.16
+        private const val MAX_REPORT_RETRIES = 3
+        private const val RETRY_DELAY_BASE_MS = 1000L
+        private const val ROUND_SUMMARY_DISPLAY_DURATION_MS = 5_000L
     }
 
     override fun onCreate() {
@@ -247,6 +251,10 @@ class SmsSenderService : Service() {
                 )
             )
 
+            // Track results locally during the round
+            val sentTaskIds = mutableListOf<String>()
+            val failedTaskIds = mutableListOf<Pair<String, String?>>() // taskId to errorMessage
+
             for ((index, task) in tasks.withIndex()) {
                 if (sentTodayCount.get() >= dailyLimit) {
                     updateNotification("Daily limit reached (${sentTodayCount.get()}/$dailyLimit)")
@@ -266,7 +274,7 @@ class SmsSenderService : Service() {
 
                 if (ContextCompat.checkSelfPermission(this@SmsSenderService, Manifest.permission.SEND_SMS)
                     != PackageManager.PERMISSION_GRANTED) {
-                    smsRepository.reportStatus(task.id, "FAILED", deviceId, "SEND_SMS permission not granted")
+                    failedTaskIds.add(task.id to "SEND_SMS permission not granted")
                     continue
                 }
 
@@ -314,19 +322,78 @@ class SmsSenderService : Service() {
                         )
                     }
 
+                    // SMS handed off to SmsManager without exception = SENT
+                    sentTaskIds.add(task.id)
+                    smsRepository.updateLocalLogStatus(task.id, SmsStatus.SENT)
                     sentTodayCount.incrementAndGet()
                     updateNotification("Sending SMS... (${index + 1}/${tasks.size})")
                 } catch (e: Exception) {
                     Log.e(TAG, "Batch: Failed to send SMS for task ${task.id}", e)
+                    failedTaskIds.add(task.id to e.message)
                     smsRepository.updateLocalLogStatus(task.id, SmsStatus.FAILED)
-                    smsRepository.reportStatus(task.id, "FAILED", deviceId, e.message)
                 }
             }
 
+            // === BATCH REPORT PHASE ===
             sendingProgressManager.updateProgress(
-                SendingProgress(status = SendingStatus.ROUND_COMPLETE, roundLimit = roundLimit)
+                SendingProgress(
+                    status = SendingStatus.REPORTING,
+                    totalInRound = sentTaskIds.size + failedTaskIds.size,
+                    sentInRound = 0,
+                    roundLimit = roundLimit
+                )
             )
-            delay(2_000)
+
+            var successfulReports = 0
+
+            // Report SENT tasks to backend with retry
+            for (taskId in sentTaskIds) {
+                var reported = false
+                for (attempt in 1..MAX_REPORT_RETRIES) {
+                    val reportResult = smsRepository.reportStatus(taskId, "SENT", deviceId)
+                    if (reportResult.isSuccess) {
+                        successfulReports++
+                        reported = true
+                        break
+                    }
+                    delay(RETRY_DELAY_BASE_MS * attempt)
+                }
+                if (!reported) {
+                    Log.w(TAG, "Failed to report SENT status for task $taskId after $MAX_REPORT_RETRIES attempts")
+                }
+            }
+
+            // Report FAILED tasks to backend with retry
+            for ((taskId, errorMessage) in failedTaskIds) {
+                for (attempt in 1..MAX_REPORT_RETRIES) {
+                    val reportResult = smsRepository.reportStatus(taskId, "FAILED", deviceId, errorMessage)
+                    if (reportResult.isSuccess) break
+                    delay(RETRY_DELAY_BASE_MS * attempt)
+                }
+            }
+
+            val roundEarnings = successfulReports * EARNINGS_PER_SMS
+
+            // Show round summary
+            sendingProgressManager.updateProgress(
+                SendingProgress(
+                    status = SendingStatus.ROUND_COMPLETE,
+                    roundLimit = roundLimit,
+                    roundSent = sentTaskIds.size,
+                    roundFailed = failedTaskIds.size,
+                    roundEarnings = roundEarnings
+                )
+            )
+
+            // Refresh today stats
+            try {
+                smsRepository.getTodayStats()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to refresh today stats after round", e)
+            }
+
+            // Wait for user to see the summary, then continue
+            delay(ROUND_SUMMARY_DISPLAY_DURATION_MS)
         }
     }
 

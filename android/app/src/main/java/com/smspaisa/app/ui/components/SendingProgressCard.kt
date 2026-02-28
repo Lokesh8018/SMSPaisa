@@ -27,6 +27,7 @@ fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}) {
                         SendingStatus.FETCHING -> "Fetching tasks..."
                         SendingStatus.SENDING -> "Sending SMS..."
                         SendingStatus.WAITING -> "Waiting for tasks..."
+                        SendingStatus.REPORTING -> "Reporting results to server..."
                         SendingStatus.ROUND_COMPLETE -> "Round complete!"
                         SendingStatus.ERROR -> "Error occurred"
                         else -> ""
@@ -64,6 +65,16 @@ fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "No tasks available. Checking again soon...",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            if (progress.status == SendingStatus.REPORTING) {
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Syncing SMS results with server...",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

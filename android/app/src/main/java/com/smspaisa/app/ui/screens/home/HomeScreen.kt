@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smspaisa.app.ui.components.*
+import com.smspaisa.app.model.SendingStatus
 import com.smspaisa.app.viewmodel.HomeUiState
 import com.smspaisa.app.viewmodel.HomeViewModel
 
@@ -38,6 +39,22 @@ fun HomeScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarScope = rememberCoroutineScope()
+    var showRoundSummary by remember { mutableStateOf(false) }
+
+    LaunchedEffect(sendingProgress.status) {
+        if (sendingProgress.status == SendingStatus.ROUND_COMPLETE &&
+            (sendingProgress.roundSent > 0 || sendingProgress.roundFailed > 0)) {
+            showRoundSummary = true
+            viewModel.loadData()
+        }
+    }
+
+    if (showRoundSummary) {
+        RoundSummaryDialog(
+            progress = sendingProgress,
+            onDismiss = { showRoundSummary = false }
+        )
+    }
 
     val requiredPermissions = remember {
         buildList {
