@@ -1,5 +1,10 @@
 package com.smspaisa.app.ui.screens.home
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,8 +14,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smspaisa.app.ui.components.*
 import com.smspaisa.app.viewmodel.HomeUiState
@@ -25,6 +32,45 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val permissionsNeeded by viewModel.permissionsNeeded.collectAsState()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
+
+    val requiredPermissions = remember {
+        buildList {
+            add(Manifest.permission.SEND_SMS)
+            add(Manifest.permission.READ_PHONE_STATE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        viewModel.onPermissionsResult(allGranted)
+        if (!allGranted) {
+            snackbarScope.launch {
+                snackbarHostState.showSnackbar("Permissions denied. Service cannot start.")
+            }
+        }
+    }
+
+    LaunchedEffect(permissionsNeeded) {
+        if (permissionsNeeded) {
+            val allGranted = requiredPermissions.all {
+                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            }
+            if (allGranted) {
+                viewModel.onPermissionsResult(true)
+            } else {
+                permissionLauncher.launch(requiredPermissions.toTypedArray())
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -72,7 +118,8 @@ fun HomeScreen(
                     label = { Text("Profile") }
                 )
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         when (val state = uiState) {
             is HomeUiState.Loading -> {

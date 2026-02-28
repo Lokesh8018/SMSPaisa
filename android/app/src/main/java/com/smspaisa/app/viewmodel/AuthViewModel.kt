@@ -79,6 +79,12 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            userPreferences.setOnboardingCompleted(true)
+        }
+    }
+
     fun resetState() {
         _uiState.value = AuthUiState.Idle
     }

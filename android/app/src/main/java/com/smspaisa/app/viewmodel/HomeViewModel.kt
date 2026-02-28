@@ -106,20 +106,39 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private val _permissionsNeeded = MutableStateFlow(false)
+    val permissionsNeeded: StateFlow<Boolean> = _permissionsNeeded.asStateFlow()
+
     fun toggleService(enable: Boolean) {
-        viewModelScope.launch {
-            try {
-                userPreferences.setServiceEnabled(enable)
-                updateServiceEnabledState(enable)
-                if (enable) {
-                    val intent = Intent(context, SmsSenderService::class.java)
-                    context.startForegroundService(intent)
-                } else {
+        if (enable) {
+            _permissionsNeeded.value = true
+        } else {
+            viewModelScope.launch {
+                val previousEnabled = _serviceEnabled.value
+                try {
+                    userPreferences.setServiceEnabled(false)
+                    updateServiceEnabledState(false)
                     val intent = Intent(context, SmsSenderService::class.java)
                     context.stopService(intent)
+                } catch (e: Exception) {
+                    updateServiceEnabledState(previousEnabled)
                 }
-            } catch (e: Exception) {
-                updateServiceEnabledState(!enable)
+            }
+        }
+    }
+
+    fun onPermissionsResult(allGranted: Boolean) {
+        _permissionsNeeded.value = false
+        if (allGranted) {
+            viewModelScope.launch {
+                try {
+                    userPreferences.setServiceEnabled(true)
+                    updateServiceEnabledState(true)
+                    val intent = Intent(context, SmsSenderService::class.java)
+                    context.startForegroundService(intent)
+                } catch (e: Exception) {
+                    updateServiceEnabledState(false)
+                }
             }
         }
     }
