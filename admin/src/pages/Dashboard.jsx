@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Users, MessageSquare, DollarSign, Smartphone, Clock } from 'lucide-react';
 import client from '../api/client';
 import StatCard from '../components/StatCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -53,31 +54,31 @@ export default function Dashboard() {
         <StatCard
           title="Total Users"
           value={stats?.totalUsers?.toLocaleString() || 0}
-          icon={<span className="text-xl">👥</span>}
+          icon={<Users className="w-5 h-5" />}
           color="blue"
         />
         <StatCard
           title="SMS Delivered"
           value={stats?.totalSmsDelivered?.toLocaleString() || 0}
-          icon={<span className="text-xl">📱</span>}
+          icon={<MessageSquare className="w-5 h-5" />}
           color="indigo"
         />
         <StatCard
           title="Total Earnings"
           value={`₹${parseFloat(stats?.totalEarnings || 0).toFixed(2)}`}
-          icon={<span className="text-xl">💰</span>}
+          icon={<DollarSign className="w-5 h-5" />}
           color="green"
         />
         <StatCard
           title="Online Devices"
           value={stats?.onlineDevices || 0}
-          icon={<span className="text-xl">📲</span>}
+          icon={<Smartphone className="w-5 h-5" />}
           color="purple"
         />
         <StatCard
           title="Pending Withdrawals"
           value={stats?.pendingWithdrawals || 0}
-          icon={<span className="text-xl">⏳</span>}
+          icon={<Clock className="w-5 h-5" />}
           color="yellow"
         />
       </div>
