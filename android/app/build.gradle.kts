@@ -24,6 +24,15 @@ android {
         buildConfigField("String", "BASE_URL", "\"https://smspaisabackend.onrender.com/\"")
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("RELEASE_KEYSTORE") ?: "release.keystore")
+            storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -32,6 +41,9 @@ android {
                 "proguard-rules.pro"
             )
             buildConfigField("String", "BASE_URL", "\"https://smspaisabackend.onrender.com/\"")
+            if (System.getenv("RELEASE_KEYSTORE") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
