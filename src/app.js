@@ -15,6 +15,7 @@ const referralRoutes = require('./routes/referralRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const { setupSocketHandlers } = require('./websocket/socketHandler');
+const { startStaleTaskCleanup } = require('./cron/staleTaskCleanup');
 const { errorResponse } = require('./utils/helpers');
 const { apiRateLimit, staticRateLimit } = require('./middleware/rateLimit');
 
@@ -44,6 +45,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
 
 setupSocketHandlers(io);
+startStaleTaskCleanup();
 
 const adminDistPath = path.join(__dirname, '..', 'admin', 'dist');
 if (fs.existsSync(adminDistPath)) {

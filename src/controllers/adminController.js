@@ -1,5 +1,7 @@
 const prisma = require('../config/database');
 const { distributeTask } = require('../services/taskDistributor');
+const { creditEarning, checkAndPayReferralBonus } = require('../services/earningsService');
+const constants = require('../utils/constants');
 const { successResponse, errorResponse, paginate, paginationMeta } = require('../utils/helpers');
 const { pushTaskToDevice } = require('../websocket/socketHandler');
 
@@ -399,10 +401,64 @@ const updateAdminPlatformSettings = async (req, res) => {
   }
 };
 
+const updateTaskStatus = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { status } = req.body;
+
+    const task = await prisma.smsTask.findUnique({ where: { id: taskId } });
+    if (!task) return errorResponse(res, 'Task not found', 'NOT_FOUND', 404);
+
+    if (task.status === 'SENT' || task.status === 'DELIVERED' || task.status === 'FAILED') {
+      return errorResponse(res, 'Task status already finalized', 'CONFLICT', 409);
+    }
+
+    const updateData = {
+      status,
+      sentAt: status === 'SENT' || status === 'DELIVERED' ? new Date() : undefined,
+      deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+    };
+
+    const updated = await prisma.smsTask.update({ where: { id: taskId }, data: updateData });
+
+    if ((status === 'SENT' || status === 'DELIVERED') && task.assignedToId) {
+      const amountEarned = constants.SMS_RATE_PER_DELIVERY;
+
+      await prisma.smsLog.create({
+        data: {
+          userId: task.assignedToId,
+          taskId,
+          status,
+          amountEarned,
+          sentAt: status === 'SENT' || status === 'DELIVERED' ? new Date() : undefined,
+          deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+        },
+      });
+
+      await creditEarning(task.assignedToId, taskId, amountEarned);
+
+      if (task.assignedDeviceId) {
+        await prisma.device.update({
+          where: { id: task.assignedDeviceId },
+          data: { smsSentToday: { increment: 1 } },
+        });
+      }
+
+      await checkAndPayReferralBonus(task.assignedToId);
+    }
+
+    return successResponse(res, { task: updated });
+  } catch (err) {
+    console.error('updateTaskStatus error:', err);
+    return errorResponse(res, 'Failed to update task status', 'SERVER_ERROR', 500);
+  }
+};
+
 module.exports = {
   listUsers, getUserById, getPlatformStats, getOnlineDevices,
   createSmsTask, bulkCreateSmsTasks, assignTaskToUser, listWithdrawals, approveWithdrawal,
   toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
   listSmsLogs, deleteUser, listTransactions,
   getAdminPlatformSettings, updateAdminPlatformSettings,
+  updateTaskStatus,
 };

@@ -100,6 +100,10 @@ const schemas = {
   updateSettings: Joi.object({
     perRoundSendLimit: Joi.number().integer().min(1).max(100).required(),
   }),
+
+  updateTaskStatus: Joi.object({
+    status: Joi.string().valid('SENT', 'DELIVERED', 'FAILED').required(),
+  }),
 };
 
 module.exports = { validate, schemas };
