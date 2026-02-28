@@ -1,7 +1,9 @@
 package com.smspaisa.app.model
 
+import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 
+@Keep
 data class Device(
     @SerializedName("id") val id: String = "",
     @SerializedName("deviceId") val deviceId: String,
