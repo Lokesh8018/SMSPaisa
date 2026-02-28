@@ -3,7 +3,6 @@ package com.smspaisa.app.ui.screens.home
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
-import kotlinx.coroutines.launch
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -20,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import com.smspaisa.app.ui.components.*
 import com.smspaisa.app.viewmodel.HomeUiState
 import com.smspaisa.app.viewmodel.HomeViewModel
@@ -78,7 +78,7 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     when (val state = uiState) {
-                        is HomeUiState.Success -> Text("Hi, ${state.userName.split(" ").first()} 👋")
+                        is HomeUiState.Success -> Text("Hi, ${state.userName.split(\" \").first()} 👋")
                         else -> Text("SMSPaisa")
                     }
                 },
