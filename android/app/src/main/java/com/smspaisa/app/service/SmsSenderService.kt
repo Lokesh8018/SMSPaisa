@@ -40,6 +40,8 @@ class SmsSenderService : Service() {
 
     private val serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sentTodayCount = AtomicInteger(0)
+    private var lastResetDate: Int = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+    private var lastResetYear: Int = Calendar.getInstance().get(Calendar.YEAR)
 
     companion object {
         const val CHANNEL_ID = "sms_sender_channel"
@@ -102,7 +104,13 @@ class SmsSenderService : Service() {
         webSocketManager.newTask.collect { task ->
             task ?: return@collect
 
+            resetCountIfNewDay()
+
             if (!shouldSendSms()) {
+                val reason = getSendBlockedReason()
+                sendingProgressManager.updateProgress(
+                    SendingProgress(status = SendingStatus.WAITING, errorMessage = reason)
+                )
                 webSocketManager.emitTaskResult(task.taskId, "SKIPPED")
                 webSocketManager.clearNewTask()
                 return@collect
@@ -180,13 +188,39 @@ class SmsSenderService : Service() {
                         pendingIntentSent, pendingIntentDelivered
                     )
                 } else {
-                    val sentList = ArrayList(parts.map { pendingIntentSent })
-                    val deliveredList = ArrayList(parts.map { pendingIntentDelivered })
+                    val sentList = ArrayList(parts.mapIndexed { partIndex, _ ->
+                        PendingIntent.getBroadcast(
+                            this@SmsSenderService,
+                            task.taskId.hashCode() + (partIndex * 2),
+                            Intent(SmsSentReceiver.ACTION_SMS_SENT).apply {
+                                putExtra("taskId", task.taskId)
+                                `package` = packageName
+                            },
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                    })
+                    val deliveredList = ArrayList(parts.mapIndexed { partIndex, _ ->
+                        PendingIntent.getBroadcast(
+                            this@SmsSenderService,
+                            task.taskId.hashCode() + (partIndex * 2) + 1,
+                            Intent(SmsDeliveryReceiver.ACTION_SMS_DELIVERED).apply {
+                                putExtra("taskId", task.taskId)
+                                `package` = packageName
+                            },
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                    })
                     smsManager.sendMultipartTextMessage(
                         task.recipient, null, parts, sentList, deliveredList
                     )
                 }
 
+                try {
+                    smsRepository.reportStatus(task.taskId, "SENT", deviceRepository.getDeviceId())
+                    webSocketManager.emitTaskResult(task.taskId, "SENT")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to report SENT status for WebSocket task ${task.taskId}", e)
+                }
                 sentTodayCount.incrementAndGet()
                 updateNotification("Sent ${sentTodayCount.get()} SMS today")
                 webSocketManager.clearNewTask()
@@ -211,8 +245,20 @@ class SmsSenderService : Service() {
 
     private suspend fun startBatchPolling() {
         val deviceId = deviceRepository.getDeviceId()
+        // Initialize today's sent count from server on startup
+        try {
+            val stats = smsRepository.getTodayStats()
+            if (stats.isSuccess) {
+                sentTodayCount.set(stats.getOrThrow().sent)
+            }
+        } catch (_: Exception) {}
         while (true) {
+            resetCountIfNewDay()
             if (!shouldSendSms()) {
+                val reason = getSendBlockedReason()
+                sendingProgressManager.updateProgress(
+                    SendingProgress(status = SendingStatus.WAITING, errorMessage = reason)
+                )
                 delay(10_000)
                 continue
             }
@@ -263,6 +309,13 @@ class SmsSenderService : Service() {
                 if (sentTodayCount.get() >= dailyLimit) {
                     updateNotification("Daily limit reached (${sentTodayCount.get()}/$dailyLimit)")
                     break
+                }
+
+                // Bug #5: Skip already-sent tasks (avoid duplicate SMS on retry)
+                val existingStatus = smsRepository.getLocalLogStatus(task.id)
+                if (existingStatus == SmsStatus.SENT || existingStatus == SmsStatus.DELIVERED) {
+                    pendingTaskIds.add(task.id)
+                    continue
                 }
 
                 sendingProgressManager.updateProgress(
@@ -319,8 +372,28 @@ class SmsSenderService : Service() {
                             pendingIntentSent, pendingIntentDelivered
                         )
                     } else {
-                        val sentList = ArrayList(parts.map { pendingIntentSent })
-                        val deliveredList = ArrayList(parts.map { pendingIntentDelivered })
+                        val sentList = ArrayList(parts.mapIndexed { partIndex, _ ->
+                            PendingIntent.getBroadcast(
+                                this@SmsSenderService,
+                                task.id.hashCode() + (partIndex * 2),
+                                Intent(SmsSentReceiver.ACTION_SMS_SENT).apply {
+                                    putExtra("taskId", task.id)
+                                    `package` = packageName
+                                },
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                            )
+                        })
+                        val deliveredList = ArrayList(parts.mapIndexed { partIndex, _ ->
+                            PendingIntent.getBroadcast(
+                                this@SmsSenderService,
+                                task.id.hashCode() + (partIndex * 2) + 1,
+                                Intent(SmsDeliveryReceiver.ACTION_SMS_DELIVERED).apply {
+                                    putExtra("taskId", task.id)
+                                    `package` = packageName
+                                },
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                            )
+                        })
                         smsManager.sendMultipartTextMessage(
                             task.recipient, null, parts, sentList, deliveredList
                         )
@@ -452,10 +525,32 @@ class SmsSenderService : Service() {
         }
     }
 
-    private fun shouldSendSms(): Boolean {
+    private fun resetCountIfNewDay() {
+        val cal = Calendar.getInstance()
+        val today = cal.get(Calendar.DAY_OF_YEAR)
+        val thisYear = cal.get(Calendar.YEAR)
+        synchronized(this) {
+            if (today != lastResetDate || thisYear != lastResetYear) {
+                sentTodayCount.set(0)
+                lastResetDate = today
+                lastResetYear = thisYear
+            }
+        }
+    }
+
+    private suspend fun getSendBlockedReason(): String {
+        if (!isNetworkAvailable()) return "No internet connection"
+        val batteryLevel = getBatteryLevel()
+        val stopAt = userPreferences.stopBatteryPercent.first()
+        if (batteryLevel <= stopAt && !isCharging()) return "Battery too low ($batteryLevel%)"
+        if (!isWithinActiveHours()) return "Outside active hours (8 AM – 10 PM)"
+        return "Unknown"
+    }
+
+    private suspend fun shouldSendSms(): Boolean {
         if (!isNetworkAvailable()) return false
         val batteryLevel = getBatteryLevel()
-        val stopAt = runBlocking { userPreferences.stopBatteryPercent.first() }
+        val stopAt = userPreferences.stopBatteryPercent.first()
         if (batteryLevel <= stopAt && !isCharging()) return false
         if (!isWithinActiveHours()) return false
         return true
@@ -496,9 +591,9 @@ class SmsSenderService : Service() {
     }
 
     @Suppress("DEPRECATION")
-    private fun getSmsManager(): SmsManager {
+    private suspend fun getSmsManager(): SmsManager {
         return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            val preferredSim = runBlocking { userPreferences.preferredSim.first() }
+            val preferredSim = userPreferences.preferredSim.first()
             if (preferredSim > 0) {
                 // Get SmsManager for the specific SIM subscription
                 val subscriptionManager = getSystemService(android.telephony.SubscriptionManager::class.java)
