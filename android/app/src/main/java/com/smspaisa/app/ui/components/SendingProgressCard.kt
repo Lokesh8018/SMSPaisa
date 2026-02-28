@@ -14,8 +14,8 @@ import com.smspaisa.app.model.SendingProgress
 import com.smspaisa.app.model.SendingStatus
 
 @Composable
-fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}) {
-    if (progress.status == SendingStatus.IDLE) return
+fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}, isServiceRunning: Boolean = false) {
+    if (progress.status == SendingStatus.IDLE && !isServiceRunning) return
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -36,7 +36,7 @@ fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}) {
                         SendingStatus.REPORTING -> "Reporting results to server..."
                         SendingStatus.ROUND_COMPLETE -> "Round complete!"
                         SendingStatus.ERROR -> "Error occurred"
-                        else -> ""
+                        SendingStatus.IDLE -> "Waiting for next batch..."
                     },
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
@@ -71,6 +71,16 @@ fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "No tasks available. Checking again soon...",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            if (progress.status == SendingStatus.IDLE && isServiceRunning) {
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Service is active. Waiting for next batch...",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
