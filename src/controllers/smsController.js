@@ -34,7 +34,7 @@ const reportStatus = async (req, res) => {
       return errorResponse(res, 'Task not found or not assigned to you', 'NOT_FOUND', 404);
     }
 
-    if (task.status === 'SENT' || task.status === 'DELIVERED' || task.status === 'FAILED') {
+    if (task.status === 'DELIVERED' || task.status === 'FAILED') {
       return errorResponse(res, 'Task status already reported', 'CONFLICT', 409);
     }
 
