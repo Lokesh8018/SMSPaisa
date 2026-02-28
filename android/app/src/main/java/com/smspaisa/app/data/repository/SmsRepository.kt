@@ -119,6 +119,15 @@ class SmsRepository @Inject constructor(
         smsLogDao.updateStatus(taskId, status.name)
     }
 
+    suspend fun getLocalLogStatus(taskId: String): SmsStatus? {
+        val statusStr = smsLogDao.getStatusByTaskId(taskId) ?: return null
+        return try {
+            SmsStatus.valueOf(statusStr)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    }
+
     private fun SmsLogEntity.toSmsLog() = SmsLog(
         id = id,
         taskId = taskId,
