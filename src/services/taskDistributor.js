@@ -22,7 +22,7 @@ const findEligibleDevice = async (userId) => {
 
 const getNextTaskForDevice = async (userId, deviceId) => {
   const device = await prisma.device.findFirst({
-    where: { id: deviceId, userId },
+    where: { deviceId, userId },
   });
 
   if (!device) return null;
@@ -44,7 +44,7 @@ const getNextTaskForDevice = async (userId, deviceId) => {
     data: {
       status: 'ASSIGNED',
       assignedToId: userId,
-      assignedDeviceId: deviceId,
+      assignedDeviceId: device.id,
       assignedAt: new Date(),
     },
   });
