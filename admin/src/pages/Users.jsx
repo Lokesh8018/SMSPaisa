@@ -105,8 +105,8 @@ export default function Users() {
                       user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>{user.isActive ? 'Active' : 'Inactive'}</span>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">₹{user.wallet?.balance?.toFixed(2) || '0.00'}</td>
-                  <td className="px-4 py-3 text-gray-600">₹{user.wallet?.totalEarned?.toFixed(2) || '0.00'}</td>
+                  <td className="px-4 py-3 text-gray-600">₹{parseFloat(user.wallet?.balance || 0).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-gray-600">₹{parseFloat(user.wallet?.totalEarned || 0).toFixed(2)}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{new Date(user.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
