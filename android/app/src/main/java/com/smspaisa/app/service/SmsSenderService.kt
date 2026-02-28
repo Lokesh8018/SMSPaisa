@@ -52,6 +52,10 @@ class SmsSenderService : Service() {
         private const val MAX_REPORT_RETRIES = 3
         private const val RETRY_DELAY_BASE_MS = 1000L
         private const val ROUND_SUMMARY_DISPLAY_DURATION_MS = 5_000L
+        // Time to wait for SmsSentReceiver PendingIntent callbacks after handing SMS to modem.
+        // Typical carrier ACK arrives within 1-3 seconds; 7 seconds provides a generous buffer
+        // for slow networks while not blocking the next round too long.
+        private const val VERIFICATION_WAIT_MS = 7_000L
     }
 
     override fun onCreate() {
@@ -252,8 +256,8 @@ class SmsSenderService : Service() {
             )
 
             // Track results locally during the round
-            val sentTaskIds = mutableListOf<String>()
-            val failedTaskIds = mutableListOf<Pair<String, String?>>() // taskId to errorMessage
+            val pendingTaskIds = mutableListOf<String>()  // Tasks sent to modem, awaiting SmsSentReceiver
+            val failedTaskIds = mutableListOf<Pair<String, String?>>() // Tasks that failed immediately
 
             for ((index, task) in tasks.withIndex()) {
                 if (sentTodayCount.get() >= dailyLimit) {
@@ -322,10 +326,10 @@ class SmsSenderService : Service() {
                         )
                     }
 
-                    // SMS handed off to SmsManager without exception = SENT
-                    sentTaskIds.add(task.id)
-                    smsRepository.updateLocalLogStatus(task.id, SmsStatus.SENT)
-                    sentTodayCount.incrementAndGet()
+                    // SMS handed off to SmsManager — wait for SmsSentReceiver to confirm
+                    pendingTaskIds.add(task.id)
+                    // Do NOT update local status to SENT here — SmsSentReceiver will do it
+                    // Do NOT increment sentTodayCount here — wait for confirmation
                     updateNotification("Sending SMS... (${index + 1}/${tasks.size})")
                 } catch (e: Exception) {
                     Log.e(TAG, "Batch: Failed to send SMS for task ${task.id}", e)
@@ -334,11 +338,46 @@ class SmsSenderService : Service() {
                 }
             }
 
+            // === VERIFICATION PHASE: Wait for SmsSentReceiver callbacks ===
+            sendingProgressManager.updateProgress(
+                SendingProgress(
+                    status = SendingStatus.VERIFYING,
+                    totalInRound = pendingTaskIds.size + failedTaskIds.size,
+                    sentInRound = 0,
+                    roundLimit = roundLimit
+                )
+            )
+
+            // Wait for SmsSentReceiver PendingIntent callbacks to update local DB
+            delay(VERIFICATION_WAIT_MS)
+
+            val confirmedSentIds = mutableListOf<String>()
+            val confirmedFailedIds = mutableListOf<Pair<String, String?>>()
+
+            for (taskId in pendingTaskIds) {
+                val actualStatus = smsRepository.getLocalLogStatus(taskId)
+                when (actualStatus) {
+                    SmsStatus.SENT -> {
+                        confirmedSentIds.add(taskId)
+                        sentTodayCount.incrementAndGet()
+                    }
+                    SmsStatus.FAILED -> confirmedFailedIds.add(taskId to "SMS failed at carrier level")
+                    else -> {
+                        // Still PENDING after wait — SmsSentReceiver didn't fire
+                        // Benefit of the doubt: modem accepted it
+                        confirmedSentIds.add(taskId)
+                        sentTodayCount.incrementAndGet()
+                        Log.w(TAG, "Task $taskId still PENDING after verification wait, assuming SENT")
+                    }
+                }
+            }
+            confirmedFailedIds.addAll(failedTaskIds)
+
             // === BATCH REPORT PHASE ===
             sendingProgressManager.updateProgress(
                 SendingProgress(
                     status = SendingStatus.REPORTING,
-                    totalInRound = sentTaskIds.size + failedTaskIds.size,
+                    totalInRound = confirmedSentIds.size + confirmedFailedIds.size,
                     sentInRound = 0,
                     roundLimit = roundLimit
                 )
@@ -347,7 +386,7 @@ class SmsSenderService : Service() {
             var successfulReports = 0
 
             // Report SENT tasks to backend with retry
-            for (taskId in sentTaskIds) {
+            for (taskId in confirmedSentIds) {
                 var reported = false
                 for (attempt in 1..MAX_REPORT_RETRIES) {
                     val reportResult = smsRepository.reportStatus(taskId, "SENT", deviceId)
@@ -364,7 +403,7 @@ class SmsSenderService : Service() {
             }
 
             // Report FAILED tasks to backend with retry
-            for ((taskId, errorMessage) in failedTaskIds) {
+            for ((taskId, errorMessage) in confirmedFailedIds) {
                 for (attempt in 1..MAX_REPORT_RETRIES) {
                     val reportResult = smsRepository.reportStatus(taskId, "FAILED", deviceId, errorMessage)
                     if (reportResult.isSuccess) break
@@ -379,8 +418,8 @@ class SmsSenderService : Service() {
                 SendingProgress(
                     status = SendingStatus.ROUND_COMPLETE,
                     roundLimit = roundLimit,
-                    roundSent = sentTaskIds.size,
-                    roundFailed = failedTaskIds.size,
+                    roundSent = confirmedSentIds.size,
+                    roundFailed = confirmedFailedIds.size,
                     roundEarnings = roundEarnings
                 )
             )
