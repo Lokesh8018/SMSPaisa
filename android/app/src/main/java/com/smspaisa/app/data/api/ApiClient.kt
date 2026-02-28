@@ -35,7 +35,6 @@ class AuthInterceptor(
 
         if (response.code == 401) {
             cachedToken = null
-            runBlocking { userPreferences.clearToken() }
         }
 
         return response
