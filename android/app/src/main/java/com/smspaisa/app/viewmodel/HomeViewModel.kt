@@ -169,6 +169,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun retryBatchPolling() {
+        sendingProgressManager.triggerRetry()
+    }
+
     fun refreshBalance() {
         viewModelScope.launch {
             val result = walletRepository.getBalance()

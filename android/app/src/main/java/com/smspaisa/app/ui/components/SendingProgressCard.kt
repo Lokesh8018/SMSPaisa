@@ -13,7 +13,7 @@ import com.smspaisa.app.model.SendingProgress
 import com.smspaisa.app.model.SendingStatus
 
 @Composable
-fun SendingProgressCard(progress: SendingProgress) {
+fun SendingProgressCard(progress: SendingProgress, onRetry: () -> Unit = {}) {
     if (progress.status == SendingStatus.IDLE) return
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -66,6 +66,19 @@ fun SendingProgressCard(progress: SendingProgress) {
                     text = "No tasks available. Checking again soon...",
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+
+            if (progress.status == SendingStatus.ERROR) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = progress.errorMessage ?: "Unknown error occurred",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = onRetry) {
+                    Text("Retry")
+                }
             }
         }
     }
