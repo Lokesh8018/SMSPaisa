@@ -145,7 +145,7 @@ const getBatchTasks = async (req, res) => {
 
     const device = await prisma.device.findFirst({ where: { deviceId, userId: req.user.id } });
     if (!device) {
-      return errorResponse(res, 'Device not found', 'NOT_FOUND', 404);
+      return errorResponse(res, 'Device not found or not owned by you', 'NOT_FOUND', 404);
     }
 
     const settings = await prisma.platformSettings.findFirst({ where: { id: 'default' } });
