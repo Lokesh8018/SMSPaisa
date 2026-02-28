@@ -35,6 +35,7 @@ const schemas = {
     taskId: Joi.string().uuid().required(),
     status: Joi.string().valid('SENT', 'DELIVERED', 'FAILED').required(),
     deviceId: Joi.string().required(),
+    errorMessage: Joi.string().optional().allow(null, ''),
   }),
 
   requestWithdrawal: Joi.object({
