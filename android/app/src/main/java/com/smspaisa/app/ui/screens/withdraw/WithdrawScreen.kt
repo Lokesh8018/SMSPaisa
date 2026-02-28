@@ -81,7 +81,7 @@ fun WithdrawScreen(
         when (val state = uiState) {
             is WithdrawUiState.Loading -> {
                 Box(Modifier.fillMaxSize().padding(paddingValues), Alignment.Center) {
-                    CircularProgressIndicator()
+                    LottieLoading()
                 }
             }
             is WithdrawUiState.Ready, is WithdrawUiState.Success, is WithdrawUiState.Error -> {

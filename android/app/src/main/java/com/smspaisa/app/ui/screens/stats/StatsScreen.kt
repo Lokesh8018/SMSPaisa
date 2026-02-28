@@ -86,7 +86,7 @@ fun StatsScreen(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    LottieLoading()
                 }
             }
             is StatsUiState.Success -> {

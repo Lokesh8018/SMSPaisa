@@ -13,6 +13,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smspaisa.app.R
+import com.smspaisa.app.ui.components.LottieLoading
 import com.smspaisa.app.viewmodel.AuthUiState
 import com.smspaisa.app.viewmodel.AuthViewModel
 
@@ -113,11 +114,7 @@ fun LoginScreen(
             enabled = phoneNumber.length == 10 && password.isNotEmpty() && uiState !is AuthUiState.Loading
         ) {
             if (uiState is AuthUiState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
-                )
+                LottieLoading(size = 24.dp, centered = false)
             } else {
                 Text(
                     "Login",
