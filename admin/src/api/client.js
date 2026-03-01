@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://smspaisabackend.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://smspaisa-backend-env.eba-p3icmzxs.us-east-1.elasticbeanstalk.com';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
