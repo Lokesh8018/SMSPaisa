@@ -121,7 +121,11 @@ data class PaymentAccount(
     @SerializedName("id") val id: String,
     @SerializedName("type") val type: String,
     @SerializedName("details") val details: String,
-    @SerializedName("isVerified") val isVerified: Boolean
+    @SerializedName("upiId") val upiId: String? = null,
+    @SerializedName("accountNumber") val accountNumber: String? = null,
+    @SerializedName("ifsc") val ifsc: String? = null,
+    @SerializedName("bankName") val bankName: String? = null,
+    @SerializedName("accountHolderName") val accountHolderName: String? = null,
 )
 
 @Keep
@@ -197,10 +201,10 @@ interface ApiService {
     @GET("api/wallet/withdraw-history")
     suspend fun getWithdrawHistory(): Response<ApiResponse<List<Transaction>>>
 
-    @POST("api/wallet/add-upi")
+    @POST("api/withdraw/add-upi")
     suspend fun addUpi(@Body request: AddUpiRequest): Response<ApiResponse<PaymentAccount>>
 
-    @POST("api/wallet/add-bank")
+    @POST("api/withdraw/add-bank")
     suspend fun addBank(@Body request: AddBankRequest): Response<ApiResponse<PaymentAccount>>
 
     @GET("api/wallet/payment-accounts")

@@ -44,8 +44,11 @@ const getTransactions = async (req, res) => {
 
 const getPaymentAccounts = async (req, res) => {
   try {
-    // Payment accounts are not yet persisted; return empty list
-    return successResponse(res, []);
+    const accounts = await prisma.paymentAccount.findMany({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    return successResponse(res, accounts);
   } catch (err) {
     console.error('getPaymentAccounts error:', err);
     return errorResponse(res, 'Failed to get payment accounts', 'SERVER_ERROR', 500);
