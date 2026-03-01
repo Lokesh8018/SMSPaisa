@@ -159,11 +159,11 @@ fun WithdrawScreen(
                         Text("Payment Method", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("UPI", "Bank").forEach { method ->
+                            listOf("UPI", "BANK").forEach { method ->
                                 FilterChip(
                                     selected = selectedMethod == method,
                                     onClick = { viewModel.setMethod(method) },
-                                    label = { Text(method) }
+                                    label = { Text(if (method == "BANK") "Bank" else method) }
                                 )
                             }
                         }
