@@ -32,6 +32,7 @@ fun WithdrawScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToStats: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     viewModel: WithdrawViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -112,7 +113,7 @@ fun WithdrawScreen(
                             BalanceCard(
                                 wallet = it.wallet,
                                 onWithdrawClick = {},
-                                onHistoryClick = {}
+                                onHistoryClick = onNavigateToHistory
                             )
                         }
                     }

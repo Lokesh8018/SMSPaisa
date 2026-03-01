@@ -31,6 +31,7 @@ import com.smspaisa.app.ui.screens.profile.ProfileScreen
 import com.smspaisa.app.ui.screens.referral.ReferralScreen
 import com.smspaisa.app.ui.screens.stats.StatsScreen
 import com.smspaisa.app.ui.screens.withdraw.WithdrawScreen
+import com.smspaisa.app.ui.screens.history.WithdrawalHistoryScreen
 import com.smspaisa.app.viewmodel.AppUpdateViewModel
 import com.smspaisa.app.viewmodel.AuthViewModel
 
@@ -43,6 +44,7 @@ sealed class Screen(val route: String) {
     object Withdraw : Screen("withdraw")
     object Profile : Screen("profile")
     object Referral : Screen("referral")
+    object History : Screen("history")
 }
 
 @Composable
@@ -136,7 +138,8 @@ fun NavGraph(
             HomeScreen(
                 onNavigateToStats = { navController.navigate(Screen.Stats.route) },
                 onNavigateToWithdraw = { navController.navigate(Screen.Withdraw.route) },
-                onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToHistory = { navController.navigate(Screen.History.route) }
             )
         }
 
@@ -154,7 +157,8 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToHome = { navController.navigate(Screen.Home.route) },
                 onNavigateToStats = { navController.navigate(Screen.Stats.route) },
-                onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToHistory = { navController.navigate(Screen.History.route) }
             )
         }
 
@@ -176,6 +180,16 @@ fun NavGraph(
         composable(Screen.Referral.route) {
             ReferralScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.History.route) {
+            WithdrawalHistoryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToHome = { navController.navigate(Screen.Home.route) },
+                onNavigateToStats = { navController.navigate(Screen.Stats.route) },
+                onNavigateToWithdraw = { navController.navigate(Screen.Withdraw.route) },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
             )
         }
     }
