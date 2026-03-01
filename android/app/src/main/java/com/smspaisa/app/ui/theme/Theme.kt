@@ -60,7 +60,7 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = Grey90,
     surfaceVariant = Grey20,
     onSurfaceVariant = Grey90,
-    outline = Grey90
+    outline = Grey50
 )
 
 @Composable
@@ -82,11 +82,13 @@ fun SMSPaisaTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = WarmBeige.toArgb()
-            window.navigationBarColor = SoftPink.toArgb()
+            val statusBarColor = if (darkTheme) Grey10 else WarmBeige
+            val navBarColor = if (darkTheme) Grey10 else SoftPink
+            window.statusBarColor = statusBarColor.toArgb()
+            window.navigationBarColor = navBarColor.toArgb()
             val insetsController = WindowCompat.getInsetsController(window, view)
-            insetsController.isAppearanceLightStatusBars = true
-            insetsController.isAppearanceLightNavigationBars = true
+            insetsController.isAppearanceLightStatusBars = !darkTheme
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

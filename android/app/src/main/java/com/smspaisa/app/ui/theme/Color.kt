@@ -25,6 +25,7 @@ val Red20 = Color(0xFFB71C1C)
 // Neutral
 val Grey10 = Color(0xFF1A1C1E)
 val Grey20 = Color(0xFF2F3033)
+val Grey50 = Color(0xFF8B8D8F)
 val Grey90 = Color(0xFFE2E2E5)
 val Grey95 = Color(0xFFF0F0F3)
 val Grey99 = Color(0xFFFCFCFF)
@@ -38,3 +39,7 @@ val StatusPending = Color(0xFFFF9800)
 // Gradient background
 val WarmBeige = Color(0xFFF3E6D8)
 val SoftPink = Color(0xFFF8D6D6)
+
+// Dark mode gradient
+val DarkGradientStart = Color(0xFF1A1C1E)
+val DarkGradientEnd = Color(0xFF2F3033)

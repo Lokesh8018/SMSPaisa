@@ -158,7 +158,7 @@ fun FloatingSupportButton(
             modifier = Modifier.fillMaxSize(),
             shape = CircleShape,
             shadowElevation = 8.dp,
-            color = Color.White
+            color = MaterialTheme.colorScheme.surface
         ) {
             LottieAnimation(
                 composition = composition,

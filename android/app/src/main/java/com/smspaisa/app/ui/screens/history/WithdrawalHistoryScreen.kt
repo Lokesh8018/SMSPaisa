@@ -1,5 +1,6 @@
 package com.smspaisa.app.ui.screens.history
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -106,20 +107,21 @@ fun WithdrawalHistoryScreen(
 
 @Composable
 private fun WithdrawalHistoryItem(txn: Transaction) {
+    val isDark = isSystemInDarkTheme()
     val statusColor = when (txn.status) {
-        "COMPLETED" -> Color(0xFF2E7D32)
-        "FAILED" -> Color(0xFFC62828)
-        else -> Color(0xFFF9A825)
+        "COMPLETED" -> if (isDark) Color(0xFF81C784) else Color(0xFF2E7D32)
+        "FAILED" -> if (isDark) Color(0xFFEF9A9A) else Color(0xFFC62828)
+        else -> if (isDark) Color(0xFFFFCC02) else Color(0xFFF9A825)
     }
     val statusBg = when (txn.status) {
-        "COMPLETED" -> Color(0xFFE8F5E9)
-        "FAILED" -> Color(0xFFFFEBEE)
-        else -> Color(0xFFFFF8E1)
+        "COMPLETED" -> if (isDark) Color(0xFF1B5E20).copy(alpha = 0.4f) else Color(0xFFE8F5E9)
+        "FAILED" -> if (isDark) Color(0xFFB71C1C).copy(alpha = 0.4f) else Color(0xFFFFEBEE)
+        else -> if (isDark) Color(0xFFE65100).copy(alpha = 0.4f) else Color(0xFFFFF8E1)
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {

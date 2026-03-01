@@ -258,7 +258,7 @@ fun WithdrawScreen(
                             items(ready.withdrawHistory) { txn ->
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.85f)),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                                     shape = RoundedCornerShape(16.dp)
                                 ) {
                                     Row(
@@ -314,7 +314,7 @@ private fun PaymentAccountItem(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-            else Color.White.copy(alpha = 0.85f)
+            else MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp),
         onClick = onSelect
