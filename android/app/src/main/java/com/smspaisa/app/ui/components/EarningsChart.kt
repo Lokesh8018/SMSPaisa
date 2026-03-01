@@ -11,6 +11,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,13 +36,14 @@ fun EarningsChart(
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp)
+                .height(180.dp)
         ) {
             val totalWidth = size.width
             val totalHeight = size.height
             val barCount = bars.size
-            val spacing = totalWidth * 0.1f / (barCount + 1)
-            val barWidth = (totalWidth - spacing * (barCount + 1)) / barCount
+            val spacingPx = 6.dp.toPx()
+            val barWidth = (totalWidth - spacingPx * (barCount + 1)) / barCount
+            val spacing = spacingPx
 
             bars.forEachIndexed { index, bar ->
                 val barHeight = (bar.value / adjustedMax) * totalHeight * 0.85f
@@ -54,6 +56,22 @@ fun EarningsChart(
                     size = Size(barWidth, barHeight),
                     cornerRadius = CornerRadius(4.dp.toPx())
                 )
+
+                if (bar.value > 0f) {
+                    val paint = android.graphics.Paint().apply {
+                        color = android.graphics.Color.DKGRAY
+                        textSize = 9.dp.toPx()
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        isAntiAlias = true
+                    }
+                    val label = if (bar.value >= 100f) "₹${bar.value.toInt()}" else "₹%.1f".format(bar.value)
+                    drawContext.canvas.nativeCanvas.drawText(
+                        label,
+                        left + barWidth / 2,
+                        top - 4.dp.toPx(),
+                        paint
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
