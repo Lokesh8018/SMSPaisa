@@ -54,6 +54,7 @@ fun ProfileScreen(
         )
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
@@ -253,5 +254,15 @@ fun ProfileScreen(
                 }
             }
         }
+    }
+    // Floating support button - positioned at bottom end
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(end = 16.dp, bottom = 96.dp),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        FloatingSupportButton()
+    }
     }
 }
