@@ -159,6 +159,12 @@ data class ReferralEntry(
     @SerializedName("earnings") val earnings: Double
 )
 
+@Keep
+data class SupportLinks(
+    @SerializedName("telegram") val telegram: String,
+    @SerializedName("whatsapp") val whatsapp: String
+)
+
 interface ApiService {
 
     // --- Auth ---
@@ -268,4 +274,9 @@ interface ApiService {
 
     @GET("api/app/version")
     suspend fun getAppVersion(): Response<ApiResponse<AppVersionResponse>>
+
+    // --- Support ---
+
+    @GET("api/app/support-links")
+    suspend fun getSupportLinks(): Response<ApiResponse<SupportLinks>>
 }
