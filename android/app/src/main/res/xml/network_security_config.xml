@@ -11,7 +11,7 @@
     <!-- Allow HTTP only for EB domain -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">
-            smspaisa-backend-env.eba-p3icmzxs.us-east-1.elasticbeanstalk.com
+            smspaisa-backend.ap-south-1.elasticbeanstalk.com
         </domain>
     </domain-config>
     
