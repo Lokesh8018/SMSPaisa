@@ -12,9 +12,7 @@
     
     "admin:build": "cd admin && npm install && npm run build",
     
-    "build": "npm install && prisma generate && npm run admin:build",
-    
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate && npm run admin:build"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
