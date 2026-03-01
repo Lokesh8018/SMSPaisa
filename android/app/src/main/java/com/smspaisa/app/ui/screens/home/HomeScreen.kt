@@ -35,6 +35,7 @@ fun HomeScreen(
     onNavigateToStats: () -> Unit,
     onNavigateToWithdraw: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -168,7 +169,7 @@ fun HomeScreen(
                         BalanceCard(
                             wallet = state.wallet,
                             onWithdrawClick = onNavigateToWithdraw,
-                            onHistoryClick = {}
+                            onHistoryClick = onNavigateToHistory
                         )
                     }
                     item {
