@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart3, Users, MessageSquare, ClipboardList, Wallet, Smartphone, CreditCard, Settings } from 'lucide-react';
+import { BarChart3, Users, MessageSquare, ClipboardList, Wallet, Smartphone, CreditCard, Settings, PackageOpen } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Dashboard', Icon: BarChart3, end: true },
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/devices', label: 'Devices', Icon: Smartphone },
   { to: '/transactions', label: 'Transactions', Icon: CreditCard },
   { to: '/settings', label: 'Settings', Icon: Settings },
+  { to: '/app-version', label: 'App Version', Icon: PackageOpen },
 ];
 
 export default function Sidebar() {

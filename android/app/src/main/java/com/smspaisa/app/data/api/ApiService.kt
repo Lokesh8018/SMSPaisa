@@ -85,6 +85,15 @@ data class ApplyReferralRequest(
     @SerializedName("referralCode") val referralCode: String
 )
 
+@Keep
+data class AppVersionResponse(
+    @SerializedName("latestVersion") val latestVersion: String,
+    @SerializedName("minVersion") val minVersion: String,
+    @SerializedName("apkUrl") val apkUrl: String,
+    @SerializedName("releaseNotes") val releaseNotes: String = "",
+    @SerializedName("forceUpdate") val forceUpdate: Boolean = false,
+)
+
 // --- Batch Tasks ---
 
 @Keep
@@ -248,4 +257,9 @@ interface ApiService {
 
     @GET("api/referral/stats")
     suspend fun getReferralStats(): Response<ApiResponse<ReferralStats>>
+
+    // --- App Update ---
+
+    @GET("api/app/version")
+    suspend fun getAppVersion(): Response<ApiResponse<AppVersionResponse>>
 }
