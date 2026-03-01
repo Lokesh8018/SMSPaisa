@@ -21,7 +21,7 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "BASE_URL", "\"http://smspaisa-backend-env.eba-p3icmzxs.us-east-1.elasticbeanstalk.com/\"")
+        buildConfigField("String", "BASE_URL", "\"http://smspaisa-backend.ap-south-1.elasticbeanstalk.com/\"")
     }
 
     signingConfigs {
@@ -40,7 +40,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "BASE_URL", "\"http://smspaisa-backend-env.eba-p3icmzxs.us-east-1.elasticbeanstalk.com/\"")
+            buildConfigField("String", "BASE_URL", "\"http://smspaisa-backend.ap-south-1.elasticbeanstalk.com/\"")
             if (System.getenv("RELEASE_KEYSTORE") != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
