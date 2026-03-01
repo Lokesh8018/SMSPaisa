@@ -14,6 +14,7 @@ const deviceRoutes = require('./routes/deviceRoutes');
 const referralRoutes = require('./routes/referralRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const statsRoutes = require('./routes/statsRoutes');
+const appRoutes = require('./routes/appRoutes');
 const { setupSocketHandlers } = require('./websocket/socketHandler');
 const { startStaleTaskCleanup } = require('./cron/staleTaskCleanup');
 const { errorResponse } = require('./utils/helpers');
@@ -43,6 +44,7 @@ app.use('/api/device', deviceRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/app', appRoutes);
 
 setupSocketHandlers(io);
 startStaleTaskCleanup();

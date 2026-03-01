@@ -173,3 +173,14 @@ model PaymentAccount {
   isDefault         Boolean  @default(false)
   createdAt         DateTime @default(now())
 }
+
+model AppVersion {
+  id            String   @id @default("current")
+  latestVersion String
+  minVersion    String
+  apkUrl        String
+  releaseNotes  String   @default("")
+  forceUpdate   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

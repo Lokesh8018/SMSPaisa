@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -20,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.smspaisa.app.ui.components.LottieLoading
+import com.smspaisa.app.ui.components.UpdateDialog
 import com.smspaisa.app.ui.screens.auth.LoginScreen
 import com.smspaisa.app.ui.screens.auth.RegisterScreen
 import com.smspaisa.app.ui.screens.home.HomeScreen
@@ -28,6 +31,7 @@ import com.smspaisa.app.ui.screens.profile.ProfileScreen
 import com.smspaisa.app.ui.screens.referral.ReferralScreen
 import com.smspaisa.app.ui.screens.stats.StatsScreen
 import com.smspaisa.app.ui.screens.withdraw.WithdrawScreen
+import com.smspaisa.app.viewmodel.AppUpdateViewModel
 import com.smspaisa.app.viewmodel.AuthViewModel
 
 sealed class Screen(val route: String) {
@@ -48,6 +52,27 @@ fun NavGraph(
     val authViewModel: AuthViewModel = hiltViewModel()
     val isReady by authViewModel.isReady.collectAsState()
     val startDestination by authViewModel.startDestination.collectAsState()
+
+    val appUpdateViewModel: AppUpdateViewModel = hiltViewModel()
+    val updateInfo by appUpdateViewModel.updateInfo.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        try {
+            val currentVersion = context.packageManager
+                .getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+            appUpdateViewModel.checkForUpdate(currentVersion)
+        } catch (e: Exception) {
+            // Silently ignore — don't crash if update check fails
+        }
+    }
+
+    updateInfo?.let { info ->
+        UpdateDialog(
+            versionInfo = info,
+            onDismiss = { appUpdateViewModel.dismissUpdate() }
+        )
+    }
 
     if (!isReady) {
         Box(

@@ -8,6 +8,7 @@ const {
   getAdminPlatformSettings, updateAdminPlatformSettings,
   updateTaskStatus,
 } = require('../controllers/adminController');
+const { updateAppVersion } = require('../controllers/appController');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { validate, schemas } = require('../middleware/validation');
 
@@ -32,5 +33,6 @@ router.get('/transactions', listTransactions);
 router.get('/settings', getAdminPlatformSettings);
 router.put('/settings', validate(schemas.updateSettings), updateAdminPlatformSettings);
 router.patch('/tasks/:taskId/status', validate(schemas.updateTaskStatus), updateTaskStatus);
+router.put('/app/version', updateAppVersion);
 
 module.exports = router;

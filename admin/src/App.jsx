@@ -15,6 +15,8 @@ import Devices from './pages/Devices';
 import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
 
+import AppVersion from './pages/AppVersion';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -36,6 +38,7 @@ export default function App() {
                   <Route path="/devices" element={<Devices />} />
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/app-version" element={<AppVersion />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>
