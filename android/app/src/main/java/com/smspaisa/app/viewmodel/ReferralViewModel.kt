@@ -71,16 +71,30 @@ class ReferralViewModel @Inject constructor(
     }
 
     fun shareReferralCode(code: String) {
-        val shareIntent = Intent.createChooser(
-            Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, "Join SMSPaisa and earn money by sending SMS! Use my referral code: $code\nDownload: https://smspaisa.com/app")
-            },
-            "Share via"
-        ).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        viewModelScope.launch {
+            val downloadLink = try {
+                val response = apiService.getAppVersion()
+                val url = response.body()?.data?.apkUrl
+                if (response.isSuccessful && !url.isNullOrBlank()) url
+                else "https://smspaisa.com/app"
+            } catch (e: Exception) {
+                "https://smspaisa.com/app"
+            }
+
+            val shareIntent = Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "Join SMSPaisa and earn money by sending SMS! Use my referral code: $code\nDownload: $downloadLink"
+                    )
+                },
+                "Share via"
+            ).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(shareIntent)
         }
-        context.startActivity(shareIntent)
     }
 
     fun clearApplyResult() {
