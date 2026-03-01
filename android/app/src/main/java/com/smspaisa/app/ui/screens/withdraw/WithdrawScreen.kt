@@ -39,6 +39,7 @@ fun WithdrawScreen(
     val selectedMethod by viewModel.selectedMethod.collectAsState()
     var amountInput by remember { mutableStateOf("") }
     var showAddUpiDialog by remember { mutableStateOf(false) }
+    var showAddBankDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState) {
         if (uiState is WithdrawUiState.Success) {
@@ -52,6 +53,16 @@ fun WithdrawScreen(
             onAdd = { upiId, name ->
                 viewModel.addUpi(upiId, name)
                 showAddUpiDialog = false
+            }
+        )
+    }
+
+    if (showAddBankDialog) {
+        AddBankDialog(
+            onDismiss = { showAddBankDialog = false },
+            onAdd = { accountNumber, ifsc, bankName, holderName ->
+                viewModel.addBank(accountNumber, ifsc, bankName, holderName)
+                showAddBankDialog = false
             }
         )
     }
@@ -87,7 +98,7 @@ fun WithdrawScreen(
             is WithdrawUiState.Ready, is WithdrawUiState.Success, is WithdrawUiState.Error -> {
                 val readyState = when (state) {
                     is WithdrawUiState.Ready -> state
-                    else -> null
+                    else -> viewModel.lastReadyState
                 }
 
                 LazyColumn(
@@ -167,10 +178,13 @@ fun WithdrawScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text("Payment Accounts", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
-                                TextButton(onClick = { showAddUpiDialog = true }) {
+                                TextButton(onClick = {
+                                    if (selectedMethod == "UPI") showAddUpiDialog = true
+                                    else showAddBankDialog = true
+                                }) {
                                     Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("Add")
+                                    Text("Add ${selectedMethod}")
                                 }
                             }
                         }
@@ -186,7 +200,7 @@ fun WithdrawScreen(
                                 }
                             }
                         } else {
-                            items(ready.paymentAccounts) { account ->
+                            items(ready.paymentAccounts.filter { it.type.equals(selectedMethod, ignoreCase = true) }) { account ->
                                 PaymentAccountItem(
                                     account = account,
                                     isSelected = viewModel.selectedAccountId.collectAsState().value == account.id,
@@ -253,7 +267,11 @@ fun WithdrawScreen(
                                         Column {
                                             Text(txn.method ?: "Unknown", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
                                             Text(
-                                                txn.createdAt,
+                                                text = try {
+                                                    val inputFmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
+                                                    val outputFmt = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+                                                    outputFmt.format(inputFmt.parse(txn.createdAt)!!)
+                                                } catch (e: Exception) { txn.createdAt },
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                             )
@@ -342,5 +360,41 @@ private fun AddUpiDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
+    )
+}
+
+@Composable
+private fun AddBankDialog(
+    onDismiss: () -> Unit,
+    onAdd: (String, String, String, String) -> Unit
+) {
+    var accountNumber by remember { mutableStateOf("") }
+    var ifsc by remember { mutableStateOf("") }
+    var bankName by remember { mutableStateOf("") }
+    var holderName by remember { mutableStateOf("") }
+    val isValid = accountNumber.isNotEmpty() && ifsc.isNotEmpty() && bankName.isNotEmpty() && holderName.isNotEmpty()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Bank Account") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = accountNumber, onValueChange = { accountNumber = it },
+                    label = { Text("Account Number") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                OutlinedTextField(value = ifsc, onValueChange = { ifsc = it.uppercase() },
+                    label = { Text("IFSC Code") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = bankName, onValueChange = { bankName = it },
+                    label = { Text("Bank Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = holderName, onValueChange = { holderName = it },
+                    label = { Text("Account Holder Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            Button(onClick = { if (isValid) onAdd(accountNumber, ifsc, bankName, holderName) }, enabled = isValid) {
+                Text("Add")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }

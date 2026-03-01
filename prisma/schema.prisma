@@ -62,6 +62,7 @@ model User {
   transactions    Transaction[]
   referralsMade   Referral[]       @relation("ReferrerRelation")
   referralReceived Referral?       @relation("ReferredRelation")
+  paymentAccounts PaymentAccount[]
 }
 
 model Wallet {
@@ -156,4 +157,19 @@ model PlatformSettings {
   id                String   @id @default("default")
   perRoundSendLimit Int      @default(25)
   updatedAt         DateTime @updatedAt
+}
+
+model PaymentAccount {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  type              String
+  upiId             String?
+  accountNumber     String?
+  ifsc              String?
+  bankName          String?
+  accountHolderName String?
+  details           String
+  isDefault         Boolean  @default(false)
+  createdAt         DateTime @default(now())
 }

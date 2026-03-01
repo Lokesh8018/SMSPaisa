@@ -1,5 +1,4 @@
 const prisma = require('../config/database');
-const { createPayout } = require('../services/payoutService');
 const constants = require('../utils/constants');
 const { successResponse, errorResponse, paginate, paginationMeta } = require('../utils/helpers');
 
@@ -50,35 +49,12 @@ const requestWithdrawal = async (req, res) => {
           status: 'PENDING',
           paymentMethod,
           paymentDetails,
-          description: `Withdrawal via ${paymentMethod}`,
+          description: `Withdrawal via ${paymentMethod} — pending admin approval`,
         },
       });
     });
 
-    try {
-      const payout = await createPayout({ amount, paymentMethod, paymentDetails, transactionId: transaction.id });
-      await prisma.transaction.update({
-        where: { id: transaction.id },
-        data: { status: 'COMPLETED', razorpayPayoutId: payout.id },
-      });
-      return successResponse(res, { ...transaction, status: 'COMPLETED', razorpayPayoutId: payout.id });
-    } catch (payoutErr) {
-      console.error('Payout error:', payoutErr);
-      await prisma.$transaction(async (tx) => {
-        await tx.wallet.update({
-          where: { userId: req.user.id },
-          data: {
-            balance: { increment: amount },
-            totalWithdrawn: { decrement: amount },
-          },
-        });
-        await tx.transaction.update({
-          where: { id: transaction.id },
-          data: { status: 'FAILED' },
-        });
-      });
-      return errorResponse(res, 'Payout processing failed', 'PAYOUT_ERROR', 500);
-    }
+    return successResponse(res, transaction, 201);
   } catch (err) {
     console.error('requestWithdrawal error:', err);
     return errorResponse(res, 'Failed to process withdrawal', 'SERVER_ERROR', 500);
@@ -108,12 +84,21 @@ const getWithdrawalHistory = async (req, res) => {
 
 const addUpi = async (req, res) => {
   try {
-    const { upi_id, upiId } = req.body;
-    const id = upi_id || upiId;
-    if (!id) return errorResponse(res, 'upi_id is required', 'VALIDATION_ERROR', 422);
+    const upiId = req.body.upi_id || req.body.upiId;
+    const name = req.body.name || req.body.accountHolderName || '';
+    if (!upiId) return errorResponse(res, 'upi_id is required', 'VALIDATION_ERROR', 422);
 
-    // UPI ID is validated and acknowledged; pass it in paymentDetails when requesting a withdrawal
-    return successResponse(res, { message: 'UPI ID validated. Use it in withdrawal requests.', upi_id: id });
+    const account = await prisma.paymentAccount.create({
+      data: {
+        userId: req.user.id,
+        type: 'UPI',
+        upiId,
+        details: upiId,
+        accountHolderName: name || null,
+      },
+    });
+
+    return successResponse(res, account, 201);
   } catch (err) {
     console.error('addUpi error:', err);
     return errorResponse(res, 'Failed to save UPI ID', 'SERVER_ERROR', 500);
@@ -122,16 +107,31 @@ const addUpi = async (req, res) => {
 
 const addBank = async (req, res) => {
   try {
-    const account_number = req.body.account_number || req.body.accountNumber;
-    const ifsc_code = req.body.ifsc_code || req.body.ifsc;
-    const bank_name = req.body.bank_name || req.body.bankName;
-    const account_holder_name = req.body.account_holder_name || req.body.accountHolderName;
-    if (!account_number || !ifsc_code || !bank_name) {
-      return errorResponse(res, 'account_number, ifsc_code, and bank_name are required', 'VALIDATION_ERROR', 422);
+    const accountNumber = req.body.account_number || req.body.accountNumber;
+    const ifsc = req.body.ifsc_code || req.body.ifsc;
+    const bankName = req.body.bank_name || req.body.bankName;
+    const accountHolderName = req.body.account_holder_name || req.body.accountHolderName || '';
+
+    if (!accountNumber || !ifsc || !bankName) {
+      return errorResponse(res, 'accountNumber, ifsc, and bankName are required', 'VALIDATION_ERROR', 422);
     }
 
-    // Bank details are validated and acknowledged; pass them in paymentDetails when requesting a withdrawal
-    return successResponse(res, { message: 'Bank details validated. Use them in withdrawal requests.', account_number, ifsc_code, bank_name });
+    const last4 = accountNumber.substring(Math.max(0, accountNumber.length - 4));
+    const details = `${bankName} - XXXX${last4}`;
+
+    const account = await prisma.paymentAccount.create({
+      data: {
+        userId: req.user.id,
+        type: 'BANK',
+        accountNumber,
+        ifsc,
+        bankName,
+        accountHolderName: accountHolderName || null,
+        details,
+      },
+    });
+
+    return successResponse(res, account, 201);
   } catch (err) {
     console.error('addBank error:', err);
     return errorResponse(res, 'Failed to save bank details', 'SERVER_ERROR', 500);
