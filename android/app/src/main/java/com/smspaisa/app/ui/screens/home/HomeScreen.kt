@@ -224,7 +224,7 @@ fun HomeScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = Color.White.copy(alpha = 0.85f)
+                                    containerColor = MaterialTheme.colorScheme.surface
                                 ),
                                 shape = RoundedCornerShape(16.dp)
                             ) {
