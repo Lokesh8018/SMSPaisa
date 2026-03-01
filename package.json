@@ -4,12 +4,17 @@
   "description": "SMSPaisa Backend API - Passive income SMS platform",
   "main": "src/app.js",
   "scripts": {
-    "start": "node src/app.js",
+    "start": "prisma migrate deploy && node src/app.js",
     "dev": "nodemon src/app.js",
-    "build": "npx prisma generate && cd admin && npm install && npm run build",
-    "migrate:deploy": "prisma migrate deploy",
+    
     "prisma:generate": "prisma generate",
-    "prisma:studio": "prisma studio"
+    "migrate:deploy": "prisma migrate deploy",
+    
+    "admin:build": "cd admin && npm install && npm run build",
+    
+    "build": "npm install && prisma generate && npm run admin:build",
+    
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
