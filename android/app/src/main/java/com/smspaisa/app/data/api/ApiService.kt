@@ -113,7 +113,11 @@ data class AuthResponse(
 data class WithdrawalResponse(
     @SerializedName("id") val id: String,
     @SerializedName("status") val status: String,
-    @SerializedName("message") val message: String
+    @SerializedName("amount") val amount: String? = null,
+    @SerializedName("paymentMethod") val paymentMethod: String? = null,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("message") val message: String? = null,
 )
 
 @Keep
@@ -195,11 +199,13 @@ interface ApiService {
 
     // --- Withdraw ---
 
-    @POST("api/wallet/withdraw")
+    @POST("api/withdraw/request")
     suspend fun requestWithdrawal(@Body request: WithdrawalRequest): Response<ApiResponse<WithdrawalResponse>>
 
-    @GET("api/wallet/withdraw-history")
-    suspend fun getWithdrawHistory(): Response<ApiResponse<List<Transaction>>>
+    @GET("api/wallet/transactions")
+    suspend fun getWithdrawHistory(
+        @Query("type") type: String = "WITHDRAWAL"
+    ): Response<ApiResponse<List<Transaction>>>
 
     @POST("api/withdraw/add-upi")
     suspend fun addUpi(@Body request: AddUpiRequest): Response<ApiResponse<PaymentAccount>>
