@@ -67,7 +67,7 @@ app.use((err, req, res, next) => {
   errorResponse(res, 'Internal server error', 'SERVER_ERROR', 500);
 });
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
   server.listen(PORT, () => {
