@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class StatsUiState {
@@ -75,7 +76,7 @@ class StatsViewModel @Inject constructor(
                     selectedPeriod = period
                 )
             } catch (e: Exception) {
-                _uiState.value = StatsUiState.Error(e.message ?: "Failed to load stats")
+                _uiState.value = StatsUiState.Error(e.toUserMessage())
             }
         }
     }

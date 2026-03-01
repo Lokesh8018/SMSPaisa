@@ -18,6 +18,7 @@ import com.smspaisa.app.model.TodayStats
 import com.smspaisa.app.model.Wallet
 import com.smspaisa.app.service.SendingProgressManager
 import com.smspaisa.app.service.SmsSenderService
+import com.smspaisa.app.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,7 +111,7 @@ class HomeViewModel @Inject constructor(
                     userName = name ?: "User"
                 )
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(e.message ?: "Failed to load data")
+                _uiState.value = HomeUiState.Error(e.toUserMessage())
             }
         }
     }
