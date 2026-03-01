@@ -6,7 +6,7 @@ const {
   toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
   listSmsLogs, deleteUser, listTransactions,
   getAdminPlatformSettings, updateAdminPlatformSettings,
-  updateTaskStatus,
+  updateTaskStatus, getAdminWeeklyChart,
 } = require('../controllers/adminController');
 const { updateAppVersion } = require('../controllers/appController');
 const { authenticate, requireAdmin } = require('../middleware/auth');
@@ -34,5 +34,6 @@ router.get('/settings', getAdminPlatformSettings);
 router.put('/settings', validate(schemas.updateSettings), updateAdminPlatformSettings);
 router.patch('/tasks/:taskId/status', validate(schemas.updateTaskStatus), updateTaskStatus);
 router.put('/app/version', updateAppVersion);
+router.get('/chart/weekly', getAdminWeeklyChart);
 
 module.exports = router;

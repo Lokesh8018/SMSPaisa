@@ -454,11 +454,47 @@ const updateTaskStatus = async (req, res) => {
   }
 };
 
+const getAdminWeeklyChart = async (req, res) => {
+  try {
+    const days = [];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const day = new Date(today);
+      day.setDate(today.getDate() - i);
+      const start = new Date(day);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(day);
+      end.setHours(23, 59, 59, 999);
+
+      const [smsCount, earningsResult] = await Promise.all([
+        prisma.smsLog.count({ where: { createdAt: { gte: start, lte: end } } }),
+        prisma.smsLog.aggregate({
+          _sum: { amountEarned: true },
+          where: { status: 'DELIVERED', createdAt: { gte: start, lte: end } },
+        }),
+      ]);
+
+      days.push({
+        name: dayNames[day.getDay()],
+        sms: smsCount,
+        earnings: parseFloat(earningsResult._sum.amountEarned) || 0,
+      });
+    }
+
+    return successResponse(res, { days });
+  } catch (err) {
+    console.error('getAdminWeeklyChart error:', err);
+    return errorResponse(res, 'Failed to get chart data', 'SERVER_ERROR', 500);
+  }
+};
+
 module.exports = {
   listUsers, getUserById, getPlatformStats, getOnlineDevices,
   createSmsTask, bulkCreateSmsTasks, assignTaskToUser, listWithdrawals, approveWithdrawal,
   toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
   listSmsLogs, deleteUser, listTransactions,
   getAdminPlatformSettings, updateAdminPlatformSettings,
-  updateTaskStatus,
+  updateTaskStatus, getAdminWeeklyChart,
 };

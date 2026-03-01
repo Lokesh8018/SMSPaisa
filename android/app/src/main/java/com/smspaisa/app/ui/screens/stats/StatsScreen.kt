@@ -150,17 +150,28 @@ fun StatsScreen(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
+                                val chartTitle = when (selectedPeriod) {
+                                    StatsPeriod.DAILY -> "This Week's Earnings"
+                                    StatsPeriod.WEEKLY -> "This Week's Earnings"
+                                    StatsPeriod.MONTHLY -> "This Month's Earnings"
+                                }
                                 Text(
-                                    "Earnings Chart",
+                                    chartTitle,
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 val chartBars = when {
-                                    state.weeklyStats != null -> state.weeklyStats.days.map {
-                                        ChartBar(it.date.takeLast(5), it.earnings.toFloat())
+                                    state.weeklyStats != null -> state.weeklyStats.days.map { day ->
+                                        val dayName = try {
+                                            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                            val cal = java.util.Calendar.getInstance()
+                                            cal.time = sdf.parse(day.date)!!
+                                            java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault()).format(cal.time)
+                                        } catch (e: Exception) { day.date.takeLast(5) }
+                                        ChartBar(dayName, day.earnings.toFloat())
                                     }
-                                    state.monthlyStats != null -> state.monthlyStats.weeks.map {
-                                        ChartBar(it.week.takeLast(5), it.totalEarnings.toFloat())
+                                    state.monthlyStats != null -> state.monthlyStats.weeks.mapIndexed { index, week ->
+                                        ChartBar("W${index + 1}", week.totalEarnings.toFloat())
                                     }
                                     state.dailyStats != null -> listOf(
                                         ChartBar("Today", state.dailyStats.earnings.toFloat())

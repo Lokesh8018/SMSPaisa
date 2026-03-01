@@ -11,18 +11,21 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [recentWithdrawals, setRecentWithdrawals] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
-      const [statsRes, withdrawalsRes, usersRes] = await Promise.all([
+      const [statsRes, withdrawalsRes, usersRes, chartRes] = await Promise.all([
         client.get('/api/admin/stats'),
         client.get('/api/admin/withdrawals?limit=5'),
         client.get('/api/admin/users?limit=5'),
+        client.get('/api/admin/chart/weekly'),
       ]);
       setStats(statsRes.data.data);
       setRecentWithdrawals(withdrawalsRes.data.data.transactions || []);
       setRecentUsers(usersRes.data.data.users || []);
+      setChartData(chartRes.data.data.days || []);
     } catch (err) {
       toast.error('Failed to load dashboard data');
     } finally {
@@ -37,16 +40,6 @@ export default function Dashboard() {
   }, [fetchData]);
 
   if (loading) return <LoadingSpinner size="lg" />;
-
-  const chartData = [
-    { name: 'Mon', sms: 40, earnings: 24 },
-    { name: 'Tue', sms: 30, earnings: 18 },
-    { name: 'Wed', sms: 60, earnings: 36 },
-    { name: 'Thu', sms: 80, earnings: 48 },
-    { name: 'Fri', sms: 55, earnings: 33 },
-    { name: 'Sat', sms: 90, earnings: 54 },
-    { name: 'Sun', sms: 70, earnings: 42 },
-  ];
 
   return (
     <div className="space-y-6">
