@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class WithdrawalHistoryUiState {
@@ -36,7 +37,7 @@ class WithdrawalHistoryViewModel @Inject constructor(
             _uiState.value = if (result.isSuccess) {
                 WithdrawalHistoryUiState.Success(result.getOrDefault(emptyList()))
             } else {
-                WithdrawalHistoryUiState.Error(result.exceptionOrNull()?.message ?: "Failed to load history")
+                WithdrawalHistoryUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Failed to load history")
             }
         }
     }

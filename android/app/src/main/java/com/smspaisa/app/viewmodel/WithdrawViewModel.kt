@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class WithdrawUiState {
@@ -121,7 +122,7 @@ class WithdrawViewModel @Inject constructor(
             if (result.isSuccess) {
                 _uiState.value = WithdrawUiState.Success("Withdrawal of ₹$amount requested successfully!")
             } else {
-                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.message ?: "Withdrawal failed")
+                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Withdrawal failed")
             }
         }
     }
@@ -132,7 +133,7 @@ class WithdrawViewModel @Inject constructor(
             if (result.isSuccess) {
                 loadData()
             } else {
-                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.message ?: "Failed to add UPI")
+                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Failed to add UPI")
             }
         }
     }
@@ -143,7 +144,7 @@ class WithdrawViewModel @Inject constructor(
             if (result.isSuccess) {
                 loadData()
             } else {
-                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.message ?: "Failed to add bank account")
+                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Failed to add bank account")
             }
         }
     }

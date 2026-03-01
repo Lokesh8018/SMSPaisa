@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class ReferralUiState {
@@ -48,7 +49,7 @@ class ReferralViewModel @Inject constructor(
                     _uiState.value = ReferralUiState.Error("Failed to load referral stats")
                 }
             } catch (e: Exception) {
-                _uiState.value = ReferralUiState.Error(e.message ?: "Unknown error")
+                _uiState.value = ReferralUiState.Error(e.toUserMessage())
             }
         }
     }
@@ -64,7 +65,7 @@ class ReferralViewModel @Inject constructor(
                     _applyResult.value = response.body()?.error?.message ?: "Failed to apply code"
                 }
             } catch (e: Exception) {
-                _applyResult.value = e.message ?: "Unknown error"
+                _applyResult.value = e.toUserMessage()
             }
         }
     }

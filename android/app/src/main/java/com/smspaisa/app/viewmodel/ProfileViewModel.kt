@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class ProfileUiState {
@@ -59,7 +60,7 @@ class ProfileViewModel @Inject constructor(
                 )
             }
             profileResult.onFailure {
-                _uiState.value = ProfileUiState.Error(it.message ?: "Failed to load profile")
+                _uiState.value = ProfileUiState.Error(it.toUserMessage())
             }
         }
     }

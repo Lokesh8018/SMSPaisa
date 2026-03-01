@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class AuthUiState {
@@ -61,7 +62,7 @@ class AuthViewModel @Inject constructor(
             _uiState.value = if (result.isSuccess) {
                 AuthUiState.Success
             } else {
-                AuthUiState.Error(result.exceptionOrNull()?.message ?: "Login failed")
+                AuthUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Login failed")
             }
         }
     }
@@ -74,7 +75,7 @@ class AuthViewModel @Inject constructor(
             _uiState.value = if (result.isSuccess) {
                 AuthUiState.Success
             } else {
-                AuthUiState.Error(result.exceptionOrNull()?.message ?: "Registration failed")
+                AuthUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Registration failed")
             }
         }
     }

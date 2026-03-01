@@ -21,6 +21,7 @@ import com.smspaisa.app.data.repository.DeviceRepository
 import com.smspaisa.app.data.repository.SmsRepository
 import com.smspaisa.app.model.SendingProgress
 import com.smspaisa.app.model.SendingStatus
+import com.smspaisa.app.utils.toUserMessage
 import com.smspaisa.app.model.SmsStatus
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
@@ -270,7 +271,7 @@ class SmsSenderService : Service() {
                 sendingProgressManager.updateProgress(
                     SendingProgress(
                         status = SendingStatus.ERROR,
-                        errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+                        errorMessage = result.exceptionOrNull()?.toUserMessage() ?: "Something went wrong. Please try again."
                     )
                 )
                 withTimeoutOrNull(10_000) {
