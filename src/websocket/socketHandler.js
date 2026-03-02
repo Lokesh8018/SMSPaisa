@@ -4,6 +4,7 @@ const { creditEarning, checkAndPayReferralBonus } = require('../services/earning
 const constants = require('../utils/constants');
 
 const connectedDevices = new Map();
+const connectedUsers = new Map();
 
 const setupSocketHandlers = (io) => {
   io.use(async (socket, next) => {
@@ -28,6 +29,7 @@ const setupSocketHandlers = (io) => {
 
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id} (user: ${socket.user.id})`);
+    connectedUsers.set(socket.user.id, socket.id);
 
     socket.on('device-status', async (data) => {
       try {
@@ -137,7 +139,11 @@ const setupSocketHandlers = (io) => {
             });
           }
           socket.emit('balance-updated', { balance: parseFloat(wallet.balance) });
-          await checkAndPayReferralBonus(socket.user.id);
+          const emitFn = (userId, balance) => {
+            const socketId = connectedUsers.get(userId);
+            if (socketId) io.to(socketId).emit('balance-updated', { balance });
+          };
+          await checkAndPayReferralBonus(socket.user.id, emitFn);
         }
       } catch (err) {
         console.error('task-result error:', err);
@@ -146,6 +152,7 @@ const setupSocketHandlers = (io) => {
 
     socket.on('disconnect', async () => {
       console.log(`Socket disconnected: ${socket.id}`);
+      connectedUsers.delete(socket.user.id);
       for (const [deviceId, info] of connectedDevices.entries()) {
         if (info.socketId === socket.id) {
           connectedDevices.delete(deviceId);
@@ -193,4 +200,11 @@ const cancelTask = (io, deviceId, taskId) => {
   return false;
 };
 
-module.exports = { setupSocketHandlers, pushTaskToDevice, cancelTask };
+const emitBalanceUpdateByUserId = (io, userId, balance) => {
+  const socketId = connectedUsers.get(userId);
+  if (socketId) {
+    io.to(socketId).emit('balance-updated', { balance });
+  }
+};
+
+module.exports = { setupSocketHandlers, pushTaskToDevice, cancelTask, emitBalanceUpdateByUserId };

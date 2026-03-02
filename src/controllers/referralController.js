@@ -66,15 +66,22 @@ const getReferralStats = async (req, res) => {
 
     const totalReferrals = referrals.length;
     const paidReferrals = referrals.filter((r) => r.bonusPaid).length;
-    const totalEarned = referrals.filter((r) => r.bonusPaid).reduce((acc, r) => acc + parseFloat(r.referrerBonus), 0);
+    const totalEarnings = referrals.filter((r) => r.bonusPaid).reduce((acc, r) => acc + parseFloat(r.referrerBonus), 0);
+
+    const formattedReferrals = referrals.map((r) => ({
+      id: r.id,
+      name: r.referred?.phone ? `User ${r.referred.phone.slice(-4)}` : 'Unknown',
+      joinedAt: r.referred?.createdAt ? new Date(r.referred.createdAt).toLocaleDateString('en-IN') : '',
+      status: r.bonusPaid ? 'PAID' : 'PENDING',
+      earnings: r.bonusPaid ? parseFloat(r.referrerBonus) : 0,
+    }));
 
     return successResponse(res, {
       referralCode: (await prisma.user.findUnique({ where: { id: req.user.id }, select: { referralCode: true } })).referralCode,
       totalReferrals,
-      paidReferrals,
-      pendingReferrals: totalReferrals - paidReferrals,
-      totalEarned,
-      referrals,
+      activeReferrals: totalReferrals - paidReferrals,
+      totalEarnings,
+      referrals: formattedReferrals,
     });
   } catch (err) {
     console.error('getReferralStats error:', err);
