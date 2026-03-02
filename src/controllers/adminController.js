@@ -298,9 +298,6 @@ const rejectWithdrawal = async (req, res) => {
   try {
     const transaction = await prisma.transaction.findUnique({ where: { id: req.params.id } });
     if (!transaction) return errorResponse(res, 'Transaction not found', 'NOT_FOUND', 404);
-    if (transaction.status === 'COMPLETED') {
-      return errorResponse(res, 'Transaction is already completed', 'VALIDATION_ERROR', 422);
-    }
     if (transaction.status !== 'PENDING') {
       return errorResponse(res, 'Transaction is not pending', 'VALIDATION_ERROR', 422);
     }

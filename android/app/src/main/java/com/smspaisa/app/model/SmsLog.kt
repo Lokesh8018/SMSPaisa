@@ -10,8 +10,8 @@ data class SmsLog(
     @SerializedName("recipient") val recipient: String,
     @SerializedName("message") val message: String,
     @SerializedName("status") val status: SmsStatus,
-    @SerializedName("amountEarned") val amountEarned: Double = 0.0,
-    @SerializedName("createdAt") val createdAt: String = ""
+    @SerializedName("amount") val amount: Double = 0.0,
+    @SerializedName("timestamp") val timestamp: Long = 0L
 )
 
 @Keep

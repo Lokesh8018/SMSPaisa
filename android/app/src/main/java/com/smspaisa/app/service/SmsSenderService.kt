@@ -112,7 +112,7 @@ class SmsSenderService : Service() {
                 sendingProgressManager.updateProgress(
                     SendingProgress(status = SendingStatus.WAITING, errorMessage = reason)
                 )
-                webSocketManager.emitTaskResult(task.id, "SKIPPED")
+                webSocketManager.emitTaskResult(task.taskId, "SKIPPED")
                 webSocketManager.clearNewTask()
                 return@collect
             }
@@ -120,7 +120,7 @@ class SmsSenderService : Service() {
             val dailyLimit = userPreferences.dailySmsLimit.first()
             if (sentTodayCount.get() >= dailyLimit) {
                 updateNotification("Daily limit reached (${sentTodayCount.get()}/$dailyLimit)")
-                webSocketManager.emitTaskResult(task.id, "SKIPPED")
+                webSocketManager.emitTaskResult(task.taskId, "SKIPPED")
                 webSocketManager.clearNewTask()
                 return@collect
             }
@@ -128,16 +128,16 @@ class SmsSenderService : Service() {
             // Validate recipient phone number
             val recipientTrimmed = task.recipient.trim()
             if (recipientTrimmed.isBlank() || recipientTrimmed.filter { it.isDigit() }.length < MIN_PHONE_NUMBER_DIGITS) {
-                Log.w(TAG, "Invalid recipient phone number for task: ${task.id}")
-                webSocketManager.emitTaskResult(task.id, "FAILED", "Invalid recipient phone number")
+                Log.w(TAG, "Invalid recipient phone number for task: ${task.taskId}")
+                webSocketManager.emitTaskResult(task.taskId, "FAILED", "Invalid recipient phone number")
                 webSocketManager.clearNewTask()
                 return@collect
             }
 
             // Validate message content
             if (task.message.isBlank()) {
-                Log.w(TAG, "Empty message content for task: ${task.id}")
-                webSocketManager.emitTaskResult(task.id, "FAILED", "Empty message content")
+                Log.w(TAG, "Empty message content for task: ${task.taskId}")
+                webSocketManager.emitTaskResult(task.taskId, "FAILED", "Empty message content")
                 webSocketManager.clearNewTask()
                 return@collect
             }
@@ -146,7 +146,7 @@ class SmsSenderService : Service() {
             if (ContextCompat.checkSelfPermission(this@SmsSenderService, Manifest.permission.SEND_SMS)
                 != PackageManager.PERMISSION_GRANTED) {
                 Log.w(TAG, "SEND_SMS permission not granted, cannot send SMS")
-                webSocketManager.emitTaskResult(task.id, "FAILED", "SEND_SMS permission not granted")
+                webSocketManager.emitTaskResult(task.taskId, "FAILED", "SEND_SMS permission not granted")
                 webSocketManager.clearNewTask()
                 return@collect
             }
@@ -158,25 +158,25 @@ class SmsSenderService : Service() {
                 val smsManager = getSmsManager()
                 val pendingIntentSent = PendingIntent.getBroadcast(
                     this@SmsSenderService,
-                    task.id.hashCode(),
+                    task.taskId.hashCode(),
                     Intent(SmsSentReceiver.ACTION_SMS_SENT).apply {
-                        putExtra("taskId", task.id)
+                        putExtra("taskId", task.taskId)
                         `package` = packageName
                     },
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 val pendingIntentDelivered = PendingIntent.getBroadcast(
                     this@SmsSenderService,
-                    task.id.hashCode() + 1,
+                    task.taskId.hashCode() + 1,
                     Intent(SmsDeliveryReceiver.ACTION_SMS_DELIVERED).apply {
-                        putExtra("taskId", task.id)
+                        putExtra("taskId", task.taskId)
                         `package` = packageName
                     },
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
 
                 smsRepository.insertLocalLog(
-                    taskId = task.id,
+                    taskId = task.taskId,
                     recipient = task.recipient,
                     message = task.message,
                     status = SmsStatus.PENDING
@@ -192,9 +192,9 @@ class SmsSenderService : Service() {
                     val sentList = ArrayList(parts.mapIndexed { partIndex, _ ->
                         PendingIntent.getBroadcast(
                             this@SmsSenderService,
-                            task.id.hashCode() + (partIndex * 2),
+                            task.taskId.hashCode() + (partIndex * 2),
                             Intent(SmsSentReceiver.ACTION_SMS_SENT).apply {
-                                putExtra("taskId", task.id)
+                                putExtra("taskId", task.taskId)
                                 `package` = packageName
                             },
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -203,9 +203,9 @@ class SmsSenderService : Service() {
                     val deliveredList = ArrayList(parts.mapIndexed { partIndex, _ ->
                         PendingIntent.getBroadcast(
                             this@SmsSenderService,
-                            task.id.hashCode() + (partIndex * 2) + 1,
+                            task.taskId.hashCode() + (partIndex * 2) + 1,
                             Intent(SmsDeliveryReceiver.ACTION_SMS_DELIVERED).apply {
-                                putExtra("taskId", task.id)
+                                putExtra("taskId", task.taskId)
                                 `package` = packageName
                             },
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -217,10 +217,10 @@ class SmsSenderService : Service() {
                 }
 
                 try {
-                    smsRepository.reportStatus(task.id, "SENT", deviceRepository.getDeviceId())
-                    webSocketManager.emitTaskResult(task.id, "SENT")
+                    smsRepository.reportStatus(task.taskId, "SENT", deviceRepository.getDeviceId())
+                    webSocketManager.emitTaskResult(task.taskId, "SENT")
                 } catch (e: Exception) {
-                    Log.w(TAG, "Failed to report SENT status for WebSocket task ${task.id}", e)
+                    Log.w(TAG, "Failed to report SENT status for WebSocket task ${task.taskId}", e)
                 }
                 sentTodayCount.incrementAndGet()
                 updateNotification("Sent ${sentTodayCount.get()} SMS today")
@@ -228,9 +228,9 @@ class SmsSenderService : Service() {
 
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to send SMS", e)
-                smsRepository.updateLocalLogStatus(task.id, SmsStatus.FAILED)
-                smsRepository.reportStatus(task.id, "FAILED", deviceRepository.getDeviceId(), e.message)
-                webSocketManager.emitTaskResult(task.id, "FAILED", e.message)
+                smsRepository.updateLocalLogStatus(task.taskId, SmsStatus.FAILED)
+                smsRepository.reportStatus(task.taskId, "FAILED", deviceRepository.getDeviceId(), e.message)
+                webSocketManager.emitTaskResult(task.taskId, "FAILED", e.message)
                 webSocketManager.clearNewTask()
             }
         }
@@ -313,9 +313,9 @@ class SmsSenderService : Service() {
                 }
 
                 // Bug #5: Skip already-sent tasks (avoid duplicate SMS on retry)
-                val existingStatus = smsRepository.getLocalLogStatus(task.id)
+                val existingStatus = smsRepository.getLocalLogStatus(task.taskId)
                 if (existingStatus == SmsStatus.SENT || existingStatus == SmsStatus.DELIVERED) {
-                    pendingTaskIds.add(task.id)
+                    pendingTaskIds.add(task.taskId)
                     continue
                 }
 
@@ -332,7 +332,7 @@ class SmsSenderService : Service() {
 
                 if (ContextCompat.checkSelfPermission(this@SmsSenderService, Manifest.permission.SEND_SMS)
                     != PackageManager.PERMISSION_GRANTED) {
-                    failedTaskIds.add(task.id to "SEND_SMS permission not granted")
+                    failedTaskIds.add(task.taskId to "SEND_SMS permission not granted")
                     continue
                 }
 
@@ -342,25 +342,25 @@ class SmsSenderService : Service() {
                     val smsManager = getSmsManager()
                     val pendingIntentSent = PendingIntent.getBroadcast(
                         this@SmsSenderService,
-                        task.id.hashCode(),
+                        task.taskId.hashCode(),
                         Intent(SmsSentReceiver.ACTION_SMS_SENT).apply {
-                            putExtra("taskId", task.id)
+                            putExtra("taskId", task.taskId)
                             `package` = packageName
                         },
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
                     val pendingIntentDelivered = PendingIntent.getBroadcast(
                         this@SmsSenderService,
-                        task.id.hashCode() + 1,
+                        task.taskId.hashCode() + 1,
                         Intent(SmsDeliveryReceiver.ACTION_SMS_DELIVERED).apply {
-                            putExtra("taskId", task.id)
+                            putExtra("taskId", task.taskId)
                             `package` = packageName
                         },
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
 
                     smsRepository.insertLocalLog(
-                        taskId = task.id,
+                        taskId = task.taskId,
                         recipient = task.recipient,
                         message = task.message,
                         status = SmsStatus.PENDING
@@ -376,9 +376,9 @@ class SmsSenderService : Service() {
                         val sentList = ArrayList(parts.mapIndexed { partIndex, _ ->
                             PendingIntent.getBroadcast(
                                 this@SmsSenderService,
-                                task.id.hashCode() + (partIndex * 2),
+                                task.taskId.hashCode() + (partIndex * 2),
                                 Intent(SmsSentReceiver.ACTION_SMS_SENT).apply {
-                                    putExtra("taskId", task.id)
+                                    putExtra("taskId", task.taskId)
                                     `package` = packageName
                                 },
                                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -387,9 +387,9 @@ class SmsSenderService : Service() {
                         val deliveredList = ArrayList(parts.mapIndexed { partIndex, _ ->
                             PendingIntent.getBroadcast(
                                 this@SmsSenderService,
-                                task.id.hashCode() + (partIndex * 2) + 1,
+                                task.taskId.hashCode() + (partIndex * 2) + 1,
                                 Intent(SmsDeliveryReceiver.ACTION_SMS_DELIVERED).apply {
-                                    putExtra("taskId", task.id)
+                                    putExtra("taskId", task.taskId)
                                     `package` = packageName
                                 },
                                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -401,14 +401,14 @@ class SmsSenderService : Service() {
                     }
 
                     // SMS handed off to SmsManager — wait for SmsSentReceiver to confirm
-                    pendingTaskIds.add(task.id)
+                    pendingTaskIds.add(task.taskId)
                     // Do NOT update local status to SENT here — SmsSentReceiver will do it
                     // Do NOT increment sentTodayCount here — wait for confirmation
                     updateNotification("Sending SMS... (${index + 1}/${tasks.size})")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Batch: Failed to send SMS for task ${task.id}", e)
-                    failedTaskIds.add(task.id to e.message)
-                    smsRepository.updateLocalLogStatus(task.id, SmsStatus.FAILED)
+                    Log.e(TAG, "Batch: Failed to send SMS for task ${task.taskId}", e)
+                    failedTaskIds.add(task.taskId to e.message)
+                    smsRepository.updateLocalLogStatus(task.taskId, SmsStatus.FAILED)
                 }
             }
 
@@ -544,11 +544,7 @@ class SmsSenderService : Service() {
         val batteryLevel = getBatteryLevel()
         val stopAt = userPreferences.stopBatteryPercent.first()
         if (batteryLevel <= stopAt && !isCharging()) return "Battery too low ($batteryLevel%)"
-        if (!isWithinActiveHours()) {
-            val start = userPreferences.activeHoursStart.first()
-            val end = userPreferences.activeHoursEnd.first()
-            return "Outside active hours ($start – $end)"
-        }
+        if (!isWithinActiveHours()) return "Outside active hours (8 AM – 10 PM)"
         return "Unknown"
     }
 
