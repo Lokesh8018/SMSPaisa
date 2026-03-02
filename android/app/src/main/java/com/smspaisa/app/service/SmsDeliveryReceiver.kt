@@ -34,9 +34,8 @@ class SmsDeliveryReceiver : BroadcastReceiver() {
 
         CoroutineScope(Dispatchers.IO).launch {
             smsRepository.updateLocalLogStatus(taskId, status)
-            if (status == SmsStatus.DELIVERED) {
-                smsRepository.reportStatus(taskId, "DELIVERED")
-            }
+            // NOTE: reportStatus is handled in batch after round complete
+            // SmsDeliveryReceiver only updates local DB status
         }
     }
 }

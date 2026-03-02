@@ -35,4 +35,7 @@ interface SmsLogDao {
 
     @Query("SELECT COUNT(*) FROM sms_logs WHERE status = 'SENT' AND timestamp >= :startOfDay")
     suspend fun getSentCountToday(startOfDay: Long): Int
+
+    @Query("SELECT status FROM sms_logs WHERE taskId = :taskId LIMIT 1")
+    suspend fun getStatusByTaskId(taskId: String): String?
 }

@@ -14,13 +14,16 @@ const validate = (schema, source = 'body') => {
 };
 
 const schemas = {
-  sendOtp: Joi.object({
+  register: Joi.object({
     phone: Joi.string().pattern(/^\+?[1-9]\d{9,14}$/).required(),
+    email: Joi.string().email().optional(),
+    password: Joi.string().min(8).required(),
+    deviceId: Joi.string().required(),
   }),
 
-  verifyOtp: Joi.object({
-    idToken: Joi.string().required(),
+  login: Joi.object({
     phone: Joi.string().pattern(/^\+?[1-9]\d{9,14}$/).required(),
+    password: Joi.string().required(),
   }),
 
   updateProfile: Joi.object({
@@ -30,8 +33,9 @@ const schemas = {
 
   reportStatus: Joi.object({
     taskId: Joi.string().uuid().required(),
-    status: Joi.string().valid('DELIVERED', 'FAILED').required(),
+    status: Joi.string().valid('SENT', 'DELIVERED', 'FAILED').required(),
     deviceId: Joi.string().required(),
+    errorMessage: Joi.string().optional().allow(null, ''),
   }),
 
   requestWithdrawal: Joi.object({
@@ -64,6 +68,10 @@ const schemas = {
     referralCode: Joi.string().required(),
   }),
 
+  changeUserRole: Joi.object({
+    role: Joi.string().valid('ADMIN', 'USER').required(),
+  }),
+
   createTask: Joi.object({
     recipient: Joi.string().required(),
     message: Joi.string().required(),
@@ -79,7 +87,45 @@ const schemas = {
         clientId: Joi.string().required(),
         priority: Joi.number().integer().min(0).default(0),
       })
-    ).min(1).required(),
+    ).min(1).max(10000).required(),
+  }),
+
+  bulkBroadcast: Joi.object({
+    recipients: Joi.array().items(Joi.string().required()).min(1).max(10000).required(),
+    message: Joi.string().min(1).max(160).required(),
+    clientId: Joi.string().optional().default('BROADCAST'),
+    priority: Joi.number().integer().min(0).default(0),
+  }),
+
+  assignTask: Joi.object({
+    recipient: Joi.string().required(),
+    message: Joi.string().required(),
+    clientId: Joi.string().required(),
+    priority: Joi.number().integer().min(0).default(0),
+    userId: Joi.string().uuid().required(),
+  }),
+
+  updateSettings: Joi.object({
+    perRoundSendLimit: Joi.number().integer().min(1).max(100).required(),
+  }),
+
+  updateTaskStatus: Joi.object({
+    status: Joi.string().valid('SENT', 'DELIVERED', 'FAILED').required(),
+  }),
+
+  forgotPassword: Joi.object({
+    phone: Joi.string().required(),
+    deviceId: Joi.string().required(),
+  }),
+
+  resetPassword: Joi.object({
+    resetToken: Joi.string().uuid().required(),
+    newPassword: Joi.string().min(6).required(),
+  }),
+
+  changePassword: Joi.object({
+    currentPassword: Joi.string().required(),
+    newPassword: Joi.string().min(6).required(),
   }),
 };
 

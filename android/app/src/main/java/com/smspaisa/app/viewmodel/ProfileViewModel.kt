@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class ProfileUiState {
@@ -59,7 +60,7 @@ class ProfileViewModel @Inject constructor(
                 )
             }
             profileResult.onFailure {
-                _uiState.value = ProfileUiState.Error(it.message ?: "Failed to load profile")
+                _uiState.value = ProfileUiState.Error(it.toUserMessage())
             }
         }
     }
@@ -75,7 +76,6 @@ class ProfileViewModel @Inject constructor(
     fun updateStopBatteryPercent(percent: Int) {
         viewModelScope.launch {
             userPreferences.setStopBatteryPercent(percent)
-            deviceRepository.updateDeviceSettings(stopBatteryPercent = percent)
             refreshSettings()
         }
     }
@@ -83,7 +83,6 @@ class ProfileViewModel @Inject constructor(
     fun updatePreferredSim(sim: Int) {
         viewModelScope.launch {
             userPreferences.setPreferredSim(sim)
-            deviceRepository.updateDeviceSettings(preferredSim = sim)
             refreshSettings()
         }
     }
@@ -91,7 +90,6 @@ class ProfileViewModel @Inject constructor(
     fun updateWifiOnly(wifiOnly: Boolean) {
         viewModelScope.launch {
             userPreferences.setWifiOnly(wifiOnly)
-            deviceRepository.updateDeviceSettings(wifiOnly = wifiOnly)
             refreshSettings()
         }
     }

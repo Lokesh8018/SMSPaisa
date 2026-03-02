@@ -3,26 +3,34 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.google.services)
 }
 
 android {
     namespace = "com.smspaisa.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.smspaisa.app"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
+        buildConfigField("String", "BASE_URL", "\"http://smspaisav2-env.eba-dvwrwwc7.ap-south-1.elasticbeanstalk.com/\"")
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("RELEASE_KEYSTORE") ?: "release.keystore")
+            storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
+        }
     }
 
     buildTypes {
@@ -32,7 +40,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "BASE_URL", "\"https://api.smspaisa.com/\"")
+            buildConfigField("String", "BASE_URL", "\"http://smspaisav2-env.eba-dvwrwwc7.ap-south-1.elasticbeanstalk.com/\"")
+            if (System.getenv("RELEASE_KEYSTORE") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
@@ -93,17 +104,15 @@ dependencies {
     // Socket.IO
     implementation(libs.socket.io)
 
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.messaging)
-
     // Gson
     implementation(libs.gson)
 
     // Accompanist (for pager)
     implementation(libs.accompanist.pager)
     implementation(libs.accompanist.pager.indicators)
+
+    // Lottie
+    implementation(libs.lottie.compose)
 
     // Tests
     testImplementation(libs.junit)

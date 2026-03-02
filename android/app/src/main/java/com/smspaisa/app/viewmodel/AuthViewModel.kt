@@ -2,12 +2,9 @@ package com.smspaisa.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthOptions
-import com.google.firebase.auth.PhoneAuthProvider
 import com.smspaisa.app.data.datastore.UserPreferences
 import com.smspaisa.app.data.repository.AuthRepository
+import com.smspaisa.app.data.repository.DeviceRepository
 import com.smspaisa.app.ui.navigation.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,12 +12,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class AuthUiState {
     object Idle : AuthUiState()
     object Loading : AuthUiState()
-    data class OtpSent(val phone: String) : AuthUiState()
     object Success : AuthUiState()
     data class Error(val message: String) : AuthUiState()
 }
@@ -28,6 +25,7 @@ sealed class AuthUiState {
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val deviceRepository: DeviceRepository,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
@@ -36,6 +34,9 @@ class AuthViewModel @Inject constructor(
 
     private val _startDestination = MutableStateFlow(Screen.Onboarding.route)
     val startDestination: StateFlow<String> = _startDestination.asStateFlow()
+
+    private val _isReady = MutableStateFlow(false)
+    val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
 
     init {
         determineStartDestination()
@@ -50,33 +51,38 @@ class AuthViewModel @Inject constructor(
                 token.isNullOrEmpty() -> Screen.Login.route
                 else -> Screen.Home.route
             }
+            _isReady.value = true
         }
     }
 
-    fun sendOtp(phone: String) {
+    fun login(phone: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
-            val result = authRepository.sendOtp(phone)
-            _uiState.value = if (result.isSuccess) {
-                AuthUiState.OtpSent(phone)
-            } else {
-                AuthUiState.Error(result.exceptionOrNull()?.message ?: "Failed to send OTP")
-            }
-        }
-    }
-
-    fun verifyOtp(phone: String, otp: String) {
-        viewModelScope.launch {
-            _uiState.value = AuthUiState.Loading
-            // NOTE: In a production app, integrate Firebase Phone Auth to get a real verification token.
-            // Pass the Firebase ID token obtained after phone number verification here.
-            // For development/testing, the backend may accept a dummy token based on server config.
-            val result = authRepository.verifyOtp(phone, otp, "firebase_token_placeholder")
+            val result = authRepository.login(phone, password)
             _uiState.value = if (result.isSuccess) {
                 AuthUiState.Success
             } else {
-                AuthUiState.Error(result.exceptionOrNull()?.message ?: "OTP verification failed")
+                AuthUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Login failed")
             }
+        }
+    }
+
+    fun register(phone: String, email: String?, password: String) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            val deviceId = deviceRepository.getDeviceId()
+            val result = authRepository.register(phone, email, password, deviceId)
+            _uiState.value = if (result.isSuccess) {
+                AuthUiState.Success
+            } else {
+                AuthUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Registration failed")
+            }
+        }
+    }
+
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            userPreferences.setOnboardingCompleted(true)
         }
     }
 

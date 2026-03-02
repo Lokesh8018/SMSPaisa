@@ -3,6 +3,7 @@ package com.smspaisa.app.ui.screens.withdraw
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,10 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.smspaisa.app.R
 import com.smspaisa.app.data.api.PaymentAccount
 import com.smspaisa.app.ui.components.*
 import com.smspaisa.app.viewmodel.WithdrawUiState
@@ -28,6 +32,7 @@ fun WithdrawScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToStats: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     viewModel: WithdrawViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -35,6 +40,7 @@ fun WithdrawScreen(
     val selectedMethod by viewModel.selectedMethod.collectAsState()
     var amountInput by remember { mutableStateOf("") }
     var showAddUpiDialog by remember { mutableStateOf(false) }
+    var showAddBankDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState) {
         if (uiState is WithdrawUiState.Success) {
@@ -52,7 +58,19 @@ fun WithdrawScreen(
         )
     }
 
+    if (showAddBankDialog) {
+        AddBankDialog(
+            onDismiss = { showAddBankDialog = false },
+            onAdd = { accountNumber, ifsc, bankName, holderName ->
+                viewModel.addBank(accountNumber, ifsc, bankName, holderName)
+                showAddBankDialog = false
+            }
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Withdraw") },
@@ -60,28 +78,29 @@ fun WithdrawScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(false, onNavigateToHome, { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
-                NavigationBarItem(false, onNavigateToStats, { Icon(Icons.Default.BarChart, null) }, label = { Text("Stats") })
-                NavigationBarItem(true, {}, { Icon(Icons.Default.AccountBalanceWallet, null) }, label = { Text("Withdraw") })
-                NavigationBarItem(false, onNavigateToProfile, { Icon(Icons.Default.Person, null) }, label = { Text("Profile") })
+            NavigationBar(containerColor = Color.Transparent) {
+                NavigationBarItem(false, onNavigateToHome, { Icon(painterResource(R.drawable.ic_nav_home), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Home") })
+                NavigationBarItem(false, onNavigateToStats, { Icon(painterResource(R.drawable.ic_nav_stats), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Stats") })
+                NavigationBarItem(true, {}, { Icon(painterResource(R.drawable.ic_nav_withdraw), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Withdraw") })
+                NavigationBarItem(false, onNavigateToProfile, { Icon(painterResource(R.drawable.ic_nav_profile), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Profile") })
             }
         }
     ) { paddingValues ->
         when (val state = uiState) {
             is WithdrawUiState.Loading -> {
                 Box(Modifier.fillMaxSize().padding(paddingValues), Alignment.Center) {
-                    CircularProgressIndicator()
+                    LottieLoading()
                 }
             }
             is WithdrawUiState.Ready, is WithdrawUiState.Success, is WithdrawUiState.Error -> {
                 val readyState = when (state) {
                     is WithdrawUiState.Ready -> state
-                    else -> null
+                    else -> viewModel.lastReadyState
                 }
 
                 LazyColumn(
@@ -95,7 +114,7 @@ fun WithdrawScreen(
                             BalanceCard(
                                 wallet = it.wallet,
                                 onWithdrawClick = {},
-                                onHistoryClick = {}
+                                onHistoryClick = onNavigateToHistory
                             )
                         }
                     }
@@ -142,11 +161,11 @@ fun WithdrawScreen(
                         Text("Payment Method", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("UPI", "Bank").forEach { method ->
+                            listOf("UPI", "BANK").forEach { method ->
                                 FilterChip(
                                     selected = selectedMethod == method,
                                     onClick = { viewModel.setMethod(method) },
-                                    label = { Text(method) }
+                                    label = { Text(if (method == "BANK") "Bank" else method) }
                                 )
                             }
                         }
@@ -161,10 +180,13 @@ fun WithdrawScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text("Payment Accounts", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
-                                TextButton(onClick = { showAddUpiDialog = true }) {
+                                TextButton(onClick = {
+                                    if (selectedMethod == "UPI") showAddUpiDialog = true
+                                    else showAddBankDialog = true
+                                }) {
                                     Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("Add")
+                                    Text("Add ${selectedMethod}")
                                 }
                             }
                         }
@@ -180,7 +202,7 @@ fun WithdrawScreen(
                                 }
                             }
                         } else {
-                            items(ready.paymentAccounts) { account ->
+                            items(ready.paymentAccounts.filter { it.type.equals(selectedMethod, ignoreCase = true) }) { account ->
                                 PaymentAccountItem(
                                     account = account,
                                     isSelected = viewModel.selectedAccountId.collectAsState().value == account.id,
@@ -236,7 +258,8 @@ fun WithdrawScreen(
                             items(ready.withdrawHistory) { txn ->
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    shape = RoundedCornerShape(16.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -246,7 +269,11 @@ fun WithdrawScreen(
                                         Column {
                                             Text(txn.method ?: "Unknown", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
                                             Text(
-                                                txn.createdAt,
+                                                text = try {
+                                                    val inputFmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
+                                                    val outputFmt = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+                                                    outputFmt.format(inputFmt.parse(txn.createdAt)!!)
+                                                } catch (e: Exception) { txn.createdAt },
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                             )
@@ -265,6 +292,16 @@ fun WithdrawScreen(
             else -> {}
         }
     }
+    // Floating support button - positioned at bottom end
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(end = 16.dp, bottom = 96.dp),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        FloatingSupportButton()
+    }
+    }
 }
 
 @Composable
@@ -279,6 +316,7 @@ private fun PaymentAccountItem(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
             else MaterialTheme.colorScheme.surface
         ),
+        shape = RoundedCornerShape(16.dp),
         onClick = onSelect
     ) {
         Row(
@@ -334,5 +372,41 @@ private fun AddUpiDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
+    )
+}
+
+@Composable
+private fun AddBankDialog(
+    onDismiss: () -> Unit,
+    onAdd: (String, String, String, String) -> Unit
+) {
+    var accountNumber by remember { mutableStateOf("") }
+    var ifsc by remember { mutableStateOf("") }
+    var bankName by remember { mutableStateOf("") }
+    var holderName by remember { mutableStateOf("") }
+    val isValid = accountNumber.isNotEmpty() && ifsc.isNotEmpty() && bankName.isNotEmpty() && holderName.isNotEmpty()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Bank Account") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = accountNumber, onValueChange = { accountNumber = it },
+                    label = { Text("Account Number") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                OutlinedTextField(value = ifsc, onValueChange = { ifsc = it.uppercase() },
+                    label = { Text("IFSC Code") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = bankName, onValueChange = { bankName = it },
+                    label = { Text("Bank Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = holderName, onValueChange = { holderName = it },
+                    label = { Text("Account Holder Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            Button(onClick = { if (isValid) onAdd(accountNumber, ifsc, bankName, holderName) }, enabled = isValid) {
+                Text("Add")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }

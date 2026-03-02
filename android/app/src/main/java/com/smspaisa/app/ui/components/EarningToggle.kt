@@ -13,12 +13,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smspaisa.app.model.SendingProgress
+import com.smspaisa.app.model.SendingStatus
+import com.smspaisa.app.ui.theme.Orange20
 
 @Composable
 fun EarningToggle(
     isActive: Boolean,
     onToggle: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sendingProgress: SendingProgress = SendingProgress()
 ) {
     val pulseAnim = rememberInfiniteTransition(label = "pulse")
     val scale by pulseAnim.animateFloat(
@@ -88,10 +92,30 @@ fun EarningToggle(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = if (isActive) "Service is running" else "Tap to start earning",
+            text = if (isActive) {
+                when (sendingProgress.status) {
+                    SendingStatus.SENDING -> "Sending SMS... (${sendingProgress.sentInRound}/${sendingProgress.totalInRound})"
+                    SendingStatus.WAITING -> sendingProgress.errorMessage ?: "Waiting for tasks..."
+                    SendingStatus.FETCHING -> "Fetching tasks..."
+                    SendingStatus.ROUND_COMPLETE -> "Round complete!"
+                    SendingStatus.VERIFYING -> "Verifying delivery..."
+                    SendingStatus.REPORTING -> "Reporting to server..."
+                    SendingStatus.ERROR -> sendingProgress.errorMessage ?: "Error occurred"
+                    else -> "Service is running"
+                }
+            } else {
+                "Tap to start earning"
+            },
             style = MaterialTheme.typography.bodySmall,
-            color = if (isActive) MaterialTheme.colorScheme.secondary
-            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            color = if (isActive) {
+                if (sendingProgress.status == SendingStatus.WAITING && sendingProgress.errorMessage != null) {
+                    Orange20  // Deep orange — indicates blocked
+                } else {
+                    MaterialTheme.colorScheme.secondary
+                }
+            } else {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            }
         )
     }
 }

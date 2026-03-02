@@ -21,4 +21,11 @@ const apiRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = { authRateLimit, apiRateLimit };
+const staticRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+module.exports = { authRateLimit, apiRateLimit, staticRateLimit };

@@ -1,5 +1,6 @@
 package com.smspaisa.app.data.api
 
+import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 import com.smspaisa.app.model.*
 import retrofit2.Response
@@ -7,38 +8,48 @@ import retrofit2.http.*
 
 // --- Request bodies ---
 
-data class SendOtpRequest(
-    @SerializedName("phone") val phone: String
-)
-
-data class VerifyOtpRequest(
+@Keep
+data class RegisterRequest(
     @SerializedName("phone") val phone: String,
-    @SerializedName("otp") val otp: String,
-    @SerializedName("firebaseToken") val firebaseToken: String
+    @SerializedName("email") val email: String?,
+    @SerializedName("password") val password: String,
+    @SerializedName("deviceId") val deviceId: String
 )
 
+@Keep
+data class LoginRequest(
+    @SerializedName("phone") val phone: String,
+    @SerializedName("password") val password: String
+)
+
+@Keep
 data class UpdateProfileRequest(
     @SerializedName("name") val name: String?,
     @SerializedName("email") val email: String?
 )
 
+@Keep
 data class ReportStatusRequest(
     @SerializedName("taskId") val taskId: String,
     @SerializedName("status") val status: String,
-    @SerializedName("errorMessage") val errorMessage: String?
+    @SerializedName("deviceId") val deviceId: String,
+    @SerializedName("errorMessage") val errorMessage: String? = null
 )
 
+@Keep
 data class WithdrawalRequest(
     @SerializedName("amount") val amount: Double,
-    @SerializedName("method") val method: String,
-    @SerializedName("accountId") val accountId: String
+    @SerializedName("paymentMethod") val paymentMethod: String,
+    @SerializedName("paymentDetails") val paymentDetails: Map<String, String>
 )
 
+@Keep
 data class AddUpiRequest(
     @SerializedName("upiId") val upiId: String,
     @SerializedName("name") val name: String
 )
 
+@Keep
 data class AddBankRequest(
     @SerializedName("accountNumber") val accountNumber: String,
     @SerializedName("ifsc") val ifsc: String,
@@ -46,21 +57,22 @@ data class AddBankRequest(
     @SerializedName("bankName") val bankName: String
 )
 
+@Keep
 data class RegisterDeviceRequest(
     @SerializedName("deviceId") val deviceId: String,
     @SerializedName("deviceName") val deviceName: String,
-    @SerializedName("simCount") val simCount: Int,
-    @SerializedName("fcmToken") val fcmToken: String?
+    @SerializedName("simInfo") val simInfo: Map<String, Any?>?
 )
 
+@Keep
 data class UpdateDeviceSettingsRequest(
+    @SerializedName("deviceId") val deviceId: String,
     @SerializedName("dailyLimit") val dailyLimit: Int?,
-    @SerializedName("activeHours") val activeHours: Map<String, String>?,
-    @SerializedName("preferredSim") val preferredSim: Int?,
-    @SerializedName("stopBatteryPercent") val stopBatteryPercent: Int?,
-    @SerializedName("wifiOnly") val wifiOnly: Boolean?
+    @SerializedName("activeHoursStart") val activeHoursStart: String?,
+    @SerializedName("activeHoursEnd") val activeHoursEnd: String?
 )
 
+@Keep
 data class HeartbeatRequest(
     @SerializedName("deviceId") val deviceId: String,
     @SerializedName("batteryLevel") val batteryLevel: Int,
@@ -68,34 +80,92 @@ data class HeartbeatRequest(
     @SerializedName("networkType") val networkType: String
 )
 
+@Keep
 data class ApplyReferralRequest(
     @SerializedName("referralCode") val referralCode: String
 )
 
+@Keep
+data class ForgotPasswordRequest(
+    @SerializedName("phone") val phone: String,
+    @SerializedName("deviceId") val deviceId: String
+)
+
+@Keep
+data class ResetPasswordRequest(
+    @SerializedName("resetToken") val resetToken: String,
+    @SerializedName("newPassword") val newPassword: String
+)
+
+@Keep
+data class ChangePasswordRequest(
+    @SerializedName("currentPassword") val currentPassword: String,
+    @SerializedName("newPassword") val newPassword: String
+)
+
+@Keep
+data class AppVersionResponse(
+    @SerializedName("latestVersion") val latestVersion: String,
+    @SerializedName("minVersion") val minVersion: String,
+    @SerializedName("apkUrl") val apkUrl: String,
+    @SerializedName("releaseNotes") val releaseNotes: String = "",
+    @SerializedName("forceUpdate") val forceUpdate: Boolean = false,
+)
+
+// --- Batch Tasks ---
+
+@Keep
+data class BatchTask(
+    @SerializedName("id") val id: String,
+    @SerializedName("recipient") val recipient: String,
+    @SerializedName("message") val message: String,
+    @SerializedName("priority") val priority: Int = 0
+)
+
+@Keep
+data class BatchTasksResponse(
+    @SerializedName("tasks") val tasks: List<BatchTask>,
+    @SerializedName("roundLimit") val roundLimit: Int
+)
+
 // --- Response bodies ---
 
+@Keep
 data class AuthResponse(
     @SerializedName("token") val token: String,
     @SerializedName("user") val user: User
 )
 
-data class OtpResponse(
-    @SerializedName("message") val message: String
+@Keep
+data class ForgotPasswordResponse(
+    @SerializedName("resetToken") val resetToken: String,
+    @SerializedName("expiresIn") val expiresIn: Int
 )
 
+@Keep
 data class WithdrawalResponse(
     @SerializedName("id") val id: String,
     @SerializedName("status") val status: String,
-    @SerializedName("message") val message: String
+    @SerializedName("amount") val amount: String? = null,
+    @SerializedName("paymentMethod") val paymentMethod: String? = null,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("message") val message: String? = null,
 )
 
+@Keep
 data class PaymentAccount(
     @SerializedName("id") val id: String,
     @SerializedName("type") val type: String,
     @SerializedName("details") val details: String,
-    @SerializedName("isVerified") val isVerified: Boolean
+    @SerializedName("upiId") val upiId: String? = null,
+    @SerializedName("accountNumber") val accountNumber: String? = null,
+    @SerializedName("ifsc") val ifsc: String? = null,
+    @SerializedName("bankName") val bankName: String? = null,
+    @SerializedName("accountHolderName") val accountHolderName: String? = null,
 )
 
+@Keep
 data class ReferralStats(
     @SerializedName("referralCode") val referralCode: String,
     @SerializedName("totalReferrals") val totalReferrals: Int,
@@ -104,6 +174,7 @@ data class ReferralStats(
     @SerializedName("referrals") val referrals: List<ReferralEntry>
 )
 
+@Keep
 data class ReferralEntry(
     @SerializedName("id") val id: String,
     @SerializedName("name") val name: String,
@@ -112,26 +183,44 @@ data class ReferralEntry(
     @SerializedName("earnings") val earnings: Double
 )
 
+@Keep
+data class SupportLinks(
+    @SerializedName("telegram") val telegram: String,
+    @SerializedName("whatsapp") val whatsapp: String
+)
+
 interface ApiService {
 
     // --- Auth ---
 
-    @POST("api/auth/send-otp")
-    suspend fun sendOtp(@Body request: SendOtpRequest): Response<ApiResponse<OtpResponse>>
+    @POST("api/auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<ApiResponse<AuthResponse>>
 
-    @POST("api/auth/verify-otp")
-    suspend fun verifyOtp(@Body request: VerifyOtpRequest): Response<ApiResponse<AuthResponse>>
+    @POST("api/auth/login")
+    suspend fun login(@Body request: LoginRequest): Response<ApiResponse<AuthResponse>>
 
-    @GET("api/auth/profile")
+    @GET("api/auth/me")
     suspend fun getProfile(): Response<ApiResponse<User>>
 
     @PUT("api/auth/profile")
     suspend fun updateProfile(@Body request: UpdateProfileRequest): Response<ApiResponse<User>>
 
+    @POST("api/auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ApiResponse<ForgotPasswordResponse>>
+
+    @POST("api/auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ApiResponse<Unit>>
+
+    @PUT("api/auth/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): Response<ApiResponse<Unit>>
+
     // --- SMS Tasks ---
 
     @GET("api/sms/next-task")
     suspend fun getNextTask(): Response<ApiResponse<SmsTask>>
+
+    @GET("api/sms/batch-tasks")
+    suspend fun getBatchTasks(@Query("deviceId") deviceId: String): Response<ApiResponse<BatchTasksResponse>>
 
     @POST("api/sms/report-status")
     suspend fun reportStatus(@Body request: ReportStatusRequest): Response<ApiResponse<Unit>>
@@ -158,16 +247,18 @@ interface ApiService {
 
     // --- Withdraw ---
 
-    @POST("api/wallet/withdraw")
+    @POST("api/withdraw/request")
     suspend fun requestWithdrawal(@Body request: WithdrawalRequest): Response<ApiResponse<WithdrawalResponse>>
 
-    @GET("api/wallet/withdraw-history")
-    suspend fun getWithdrawHistory(): Response<ApiResponse<List<Transaction>>>
+    @GET("api/wallet/transactions")
+    suspend fun getWithdrawHistory(
+        @Query("type") type: String = "WITHDRAWAL"
+    ): Response<ApiResponse<List<Transaction>>>
 
-    @POST("api/wallet/add-upi")
+    @POST("api/withdraw/add-upi")
     suspend fun addUpi(@Body request: AddUpiRequest): Response<ApiResponse<PaymentAccount>>
 
-    @POST("api/wallet/add-bank")
+    @POST("api/withdraw/add-bank")
     suspend fun addBank(@Body request: AddBankRequest): Response<ApiResponse<PaymentAccount>>
 
     @GET("api/wallet/payment-accounts")
@@ -211,4 +302,14 @@ interface ApiService {
 
     @GET("api/referral/stats")
     suspend fun getReferralStats(): Response<ApiResponse<ReferralStats>>
+
+    // --- App Update ---
+
+    @GET("api/app/version")
+    suspend fun getAppVersion(): Response<ApiResponse<AppVersionResponse>>
+
+    // --- Support ---
+
+    @GET("api/app/support-links")
+    suspend fun getSupportLinks(): Response<ApiResponse<SupportLinks>>
 }

@@ -6,24 +6,31 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.smspaisa.app.R
+import com.smspaisa.app.ui.components.LottieLoading
 import com.smspaisa.app.viewmodel.AuthUiState
 import com.smspaisa.app.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    onNavigateToOtp: (String) -> Unit,
+    onNavigateToHome: () -> Unit,
+    onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit = {},
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     var phoneNumber by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState) {
-        if (uiState is AuthUiState.OtpSent) {
-            onNavigateToOtp(phoneNumber)
+        if (uiState is AuthUiState.Success) {
+            onNavigateToHome()
             viewModel.resetState()
         }
     }
@@ -35,9 +42,10 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "💸",
-            style = MaterialTheme.typography.displayMedium
+        androidx.compose.foundation.Image(
+            painter = painterResource(id = R.drawable.ic_app_logo),
+            contentDescription = "SMSPaisa Logo",
+            modifier = Modifier.size(64.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -54,7 +62,7 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(48.dp))
         Text(
-            text = "Enter your phone number",
+            text = "Phone number",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
             modifier = Modifier.align(Alignment.Start)
         )
@@ -69,6 +77,23 @@ fun LoginScreen(
             singleLine = true,
             isError = uiState is AuthUiState.Error
         )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Password",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            modifier = Modifier.align(Alignment.Start)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Enter password") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            isError = uiState is AuthUiState.Error
+        )
         if (uiState is AuthUiState.Error) {
             Text(
                 text = (uiState as AuthUiState.Error).message,
@@ -80,29 +105,33 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = {
-                if (phoneNumber.length == 10) {
-                    viewModel.sendOtp("+91$phoneNumber")
+                if (phoneNumber.length == 10 && password.isNotEmpty()) {
+                    viewModel.login("+91$phoneNumber", password)
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
-            enabled = phoneNumber.length == 10 && uiState !is AuthUiState.Loading
+            enabled = phoneNumber.length == 10 && password.isNotEmpty() && uiState !is AuthUiState.Loading
         ) {
             if (uiState is AuthUiState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
-                )
+                LottieLoading(size = 24.dp, centered = false)
             } else {
                 Text(
-                    "Send OTP",
+                    "Login",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
+        TextButton(onClick = onNavigateToRegister) {
+            Text("Don't have an account? Register")
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        TextButton(onClick = onNavigateToForgotPassword) {
+            Text("Forgot Password?")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "By continuing, you agree to our Terms of Service and Privacy Policy",
             style = MaterialTheme.typography.bodySmall,

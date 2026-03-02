@@ -12,10 +12,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = Blue40,
+    primary = Coral40,
     onPrimary = Grey99,
-    primaryContainer = Blue80,
-    onPrimaryContainer = Blue20,
+    primaryContainer = Coral80,
+    onPrimaryContainer = Coral20,
     secondary = Green40,
     onSecondary = Grey99,
     secondaryContainer = Green80,
@@ -38,10 +38,10 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Blue80,
-    onPrimary = Blue20,
-    primaryContainer = Blue40,
-    onPrimaryContainer = Blue80,
+    primary = Coral80,
+    onPrimary = Coral20,
+    primaryContainer = Coral40,
+    onPrimaryContainer = Coral80,
     secondary = Green80,
     onSecondary = Green20,
     secondaryContainer = Green40,
@@ -60,7 +60,7 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = Grey90,
     surfaceVariant = Grey20,
     onSurfaceVariant = Grey90,
-    outline = Grey90
+    outline = Grey50
 )
 
 @Composable
@@ -82,8 +82,13 @@ fun SMSPaisaTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            val statusBarColor = if (darkTheme) Grey10 else WarmBeige
+            val navBarColor = if (darkTheme) Grey10 else SoftPink
+            window.statusBarColor = statusBarColor.toArgb()
+            window.navigationBarColor = navBarColor.toArgb()
+            val insetsController = WindowCompat.getInsetsController(window, view)
+            insetsController.isAppearanceLightStatusBars = !darkTheme
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

@@ -3,7 +3,6 @@ node_modules/
 dist/
 .DS_Store
 *.log
-prisma/migrations/
 
 # Android build artifacts
 android/.gradle/
@@ -13,3 +12,7 @@ android/local.properties
 android/**/*.iml
 android/.idea/
 # android/app/google-services.json is committed as a placeholder for CI builds
+
+# Admin panel
+admin/node_modules/
+admin/dist/

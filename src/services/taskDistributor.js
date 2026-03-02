@@ -22,7 +22,7 @@ const findEligibleDevice = async (userId) => {
 
 const getNextTaskForDevice = async (userId, deviceId) => {
   const device = await prisma.device.findFirst({
-    where: { id: deviceId, userId },
+    where: { deviceId, userId },
   });
 
   if (!device) return null;
@@ -33,21 +33,19 @@ const getNextTaskForDevice = async (userId, deviceId) => {
   const taskId = await dequeueTask();
   if (!taskId) return null;
 
-  const task = await prisma.smsTask.findFirst({
+  const result = await prisma.smsTask.updateMany({
     where: { id: taskId, status: 'QUEUED' },
-  });
-
-  if (!task) return null;
-
-  await prisma.smsTask.update({
-    where: { id: taskId },
     data: {
       status: 'ASSIGNED',
       assignedToId: userId,
-      assignedDeviceId: deviceId,
+      assignedDeviceId: device.id,
       assignedAt: new Date(),
     },
   });
+
+  if (result.count === 0) return null;
+
+  const task = await prisma.smsTask.findUnique({ where: { id: taskId } });
 
   await markTaskAssigned(taskId, deviceId);
 

@@ -29,6 +29,8 @@ fun SmsLogItem(
         SmsStatus.SENT -> StatusSent
         SmsStatus.FAILED -> StatusFailed
         SmsStatus.PENDING -> StatusPending
+        SmsStatus.QUEUED -> StatusPending
+        SmsStatus.ASSIGNED -> StatusSent
     }
 
     Card(
@@ -99,6 +101,10 @@ fun SmsLogItem(
 }
 
 private fun formatTimestamp(timestamp: Long): String {
-    val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-    return sdf.format(Date(timestamp))
+    return try {
+        val date = Date(timestamp)
+        SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(date)
+    } catch (e: Exception) {
+        ""
+    }
 }

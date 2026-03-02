@@ -69,12 +69,12 @@ fun BalanceCard(
                 }
                 Column {
                     Text(
-                        text = "Pending",
+                        text = "Withdrawn",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "₹%.2f".format(wallet.pendingBalance),
+                        text = "₹%.2f".format(wallet.totalWithdrawn),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White

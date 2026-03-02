@@ -1,18 +1,31 @@
 package com.smspaisa.app.ui.screens.home
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import kotlinx.coroutines.launch
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.smspaisa.app.R
 import com.smspaisa.app.ui.components.*
+import com.smspaisa.app.model.SendingStatus
 import com.smspaisa.app.viewmodel.HomeUiState
 import com.smspaisa.app.viewmodel.HomeViewModel
 
@@ -22,11 +35,71 @@ fun HomeScreen(
     onNavigateToStats: () -> Unit,
     onNavigateToWithdraw: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val permissionsNeeded by viewModel.permissionsNeeded.collectAsState()
+    val sendingProgress by viewModel.sendingProgress.collectAsState()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
+    var showRoundSummary by remember { mutableStateOf(false) }
 
+    LaunchedEffect(sendingProgress.status) {
+        if (sendingProgress.status == SendingStatus.ROUND_COMPLETE &&
+            (sendingProgress.roundSent > 0 || sendingProgress.roundFailed > 0)) {
+            showRoundSummary = true
+            viewModel.loadData()
+        }
+    }
+
+    if (showRoundSummary) {
+        RoundSummaryDialog(
+            progress = sendingProgress,
+            onDismiss = { showRoundSummary = false }
+        )
+    }
+
+    val requiredPermissions = remember {
+        buildList {
+            add(Manifest.permission.SEND_SMS)
+            add(Manifest.permission.READ_PHONE_STATE)
+            add(Manifest.permission.READ_PHONE_NUMBERS)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        viewModel.onPermissionsResult(allGranted)
+        if (!allGranted) {
+            snackbarScope.launch {
+                snackbarHostState.showSnackbar("Permissions denied. Service cannot start.")
+            }
+        }
+    }
+
+    LaunchedEffect(permissionsNeeded) {
+        if (permissionsNeeded) {
+            val allGranted = requiredPermissions.all {
+                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            }
+            if (allGranted) {
+                viewModel.onPermissionsResult(true)
+            } else {
+                permissionLauncher.launch(requiredPermissions.toTypedArray())
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -42,37 +115,39 @@ fun HomeScreen(
                     IconButton(onClick = {}) {
                         Icon(Icons.Default.Notifications, contentDescription = "Notifications")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = Color.Transparent) {
                 NavigationBarItem(
                     selected = true,
                     onClick = {},
-                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_home), contentDescription = null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Home") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToStats,
-                    icon = { Icon(Icons.Default.BarChart, contentDescription = null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_stats), contentDescription = null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Stats") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToWithdraw,
-                    icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_withdraw), contentDescription = null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Withdraw") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToProfile,
-                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_profile), contentDescription = null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Profile") }
                 )
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         when (val state = uiState) {
             is HomeUiState.Loading -> {
@@ -80,7 +155,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    LottieLoading()
                 }
             }
             is HomeUiState.Success -> {
@@ -95,15 +170,19 @@ fun HomeScreen(
                         BalanceCard(
                             wallet = state.wallet,
                             onWithdrawClick = onNavigateToWithdraw,
-                            onHistoryClick = {}
+                            onHistoryClick = onNavigateToHistory
                         )
                     }
                     item {
                         EarningToggle(
                             isActive = state.serviceEnabled,
                             onToggle = { viewModel.toggleService(it) },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            sendingProgress = sendingProgress
                         )
+                    }
+                    item {
+                        SendingProgressCard(progress = sendingProgress, onRetry = { viewModel.retryBatchPolling() }, isServiceRunning = state.serviceEnabled)
                     }
                     item {
                         Text(
@@ -145,8 +224,9 @@ fun HomeScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                )
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                shape = RoundedCornerShape(16.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -184,5 +264,15 @@ fun HomeScreen(
                 }
             }
         }
+    }
+    // Floating support button - positioned at bottom end
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(end = 16.dp, bottom = 96.dp),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        FloatingSupportButton()
+    }
     }
 }

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class WithdrawUiState {
@@ -32,6 +33,9 @@ class WithdrawViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<WithdrawUiState>(WithdrawUiState.Loading)
     val uiState: StateFlow<WithdrawUiState> = _uiState.asStateFlow()
+
+    private var _lastReadyState: WithdrawUiState.Ready? = null
+    val lastReadyState: WithdrawUiState.Ready? get() = _lastReadyState
 
     private val _selectedAmount = MutableStateFlow(0.0)
     val selectedAmount: StateFlow<Double> = _selectedAmount.asStateFlow()
@@ -57,7 +61,9 @@ class WithdrawViewModel @Inject constructor(
             val accounts = accountsResult.getOrElse { emptyList() }
             val history = historyResult.getOrElse { emptyList() }
 
-            _uiState.value = WithdrawUiState.Ready(wallet, accounts, history)
+            val ready = WithdrawUiState.Ready(wallet, accounts, history)
+            _lastReadyState = ready
+            _uiState.value = ready
         }
     }
 
@@ -86,12 +92,37 @@ class WithdrawViewModel @Inject constructor(
                 return@launch
             }
 
+            val accounts = _lastReadyState?.paymentAccounts ?: emptyList()
+            val selectedAccount = accounts.find { it.id == accountId }
+            if (selectedAccount == null) {
+                _uiState.value = WithdrawUiState.Error("Selected payment account not found")
+                return@launch
+            }
+
+            val paymentDetails = if (selectedAccount.type == "UPI") {
+                mapOf(
+                    "accountId" to selectedAccount.id,
+                    "type" to "UPI",
+                    "upiId" to (selectedAccount.upiId ?: ""),
+                    "name" to (selectedAccount.accountHolderName ?: "")
+                )
+            } else {
+                mapOf(
+                    "accountId" to selectedAccount.id,
+                    "type" to "BANK",
+                    "accountNumber" to (selectedAccount.accountNumber ?: ""),
+                    "ifsc" to (selectedAccount.ifsc ?: ""),
+                    "bankName" to (selectedAccount.bankName ?: ""),
+                    "accountHolderName" to (selectedAccount.accountHolderName ?: "")
+                )
+            }
+
             _uiState.value = WithdrawUiState.Loading
-            val result = walletRepository.requestWithdrawal(amount, _selectedMethod.value, accountId)
+            val result = walletRepository.requestWithdrawal(amount, _selectedMethod.value, paymentDetails)
             if (result.isSuccess) {
                 _uiState.value = WithdrawUiState.Success("Withdrawal of ₹$amount requested successfully!")
             } else {
-                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.message ?: "Withdrawal failed")
+                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Withdrawal failed")
             }
         }
     }
@@ -102,7 +133,18 @@ class WithdrawViewModel @Inject constructor(
             if (result.isSuccess) {
                 loadData()
             } else {
-                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.message ?: "Failed to add UPI")
+                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Failed to add UPI")
+            }
+        }
+    }
+
+    fun addBank(accountNumber: String, ifsc: String, bankName: String, accountHolderName: String) {
+        viewModelScope.launch {
+            val result = walletRepository.addBank(accountNumber, ifsc, accountHolderName, bankName)
+            if (result.isSuccess) {
+                loadData()
+            } else {
+                _uiState.value = WithdrawUiState.Error(result.exceptionOrNull()?.toUserMessage() ?: "Failed to add bank account")
             }
         }
     }

@@ -2,15 +2,19 @@ package com.smspaisa.app.ui.screens.stats
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.smspaisa.app.R
 import com.smspaisa.app.model.DailyStats
 import com.smspaisa.app.ui.components.*
 import com.smspaisa.app.viewmodel.StatsPeriod
@@ -29,7 +33,9 @@ fun StatsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Statistics") },
@@ -42,33 +48,34 @@ fun StatsScreen(
                     IconButton(onClick = { viewModel.loadStats(selectedPeriod) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = Color.Transparent) {
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToHome,
-                    icon = { Icon(Icons.Default.Home, null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_home), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Home") }
                 )
                 NavigationBarItem(
                     selected = true,
                     onClick = {},
-                    icon = { Icon(Icons.Default.BarChart, null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_stats), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Stats") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToWithdraw,
-                    icon = { Icon(Icons.Default.AccountBalanceWallet, null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_withdraw), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Withdraw") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onNavigateToProfile,
-                    icon = { Icon(Icons.Default.Person, null) },
+                    icon = { Icon(painterResource(R.drawable.ic_nav_profile), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) },
                     label = { Text("Profile") }
                 )
             }
@@ -80,7 +87,7 @@ fun StatsScreen(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    LottieLoading()
                 }
             }
             is StatsUiState.Success -> {
@@ -94,8 +101,9 @@ fun StatsScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
@@ -138,20 +146,32 @@ fun StatsScreen(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surface
-                            )
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
+                                val chartTitle = when (selectedPeriod) {
+                                    StatsPeriod.DAILY -> "This Week's Earnings"
+                                    StatsPeriod.WEEKLY -> "This Week's Earnings"
+                                    StatsPeriod.MONTHLY -> "This Month's Earnings"
+                                }
                                 Text(
-                                    "Earnings Chart",
+                                    chartTitle,
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 val chartBars = when {
-                                    state.weeklyStats != null -> state.weeklyStats.days.map {
-                                        ChartBar(it.date.takeLast(5), it.earnings.toFloat())
+                                    state.weeklyStats != null -> state.weeklyStats.days.map { day ->
+                                        val dayName = try {
+                                            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                            val cal = java.util.Calendar.getInstance()
+                                            cal.time = sdf.parse(day.date)!!
+                                            java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault()).format(cal.time)
+                                        } catch (e: Exception) { day.date.takeLast(5) }
+                                        ChartBar(dayName, day.earnings.toFloat())
                                     }
-                                    state.monthlyStats != null -> state.monthlyStats.weeks.map {
-                                        ChartBar(it.week.takeLast(5), it.totalEarnings.toFloat())
+                                    state.monthlyStats != null -> state.monthlyStats.weeks.mapIndexed { index, week ->
+                                        ChartBar("W${index + 1}", week.totalEarnings.toFloat())
                                     }
                                     state.dailyStats != null -> listOf(
                                         ChartBar("Today", state.dailyStats.earnings.toFloat())
@@ -248,6 +268,16 @@ fun StatsScreen(
                 }
             }
         }
+    }
+    // Floating support button - positioned at bottom end
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(end = 16.dp, bottom = 96.dp),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        FloatingSupportButton()
+    }
     }
 }
 

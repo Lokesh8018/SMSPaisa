@@ -6,10 +6,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    
-    "build": "prisma generate",
+    "build": "npx prisma generate && cd admin && npm install && npm run build",
     "migrate:deploy": "prisma migrate deploy",
-    
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio"
   },
@@ -20,10 +18,10 @@
     "dotenv": "^16.4.1",
     "express": "^4.18.3",
     "express-rate-limit": "^7.2.0",
-    "firebase-admin": "^12.0.0",
     "ioredis": "^5.3.2",
     "joi": "^17.12.2",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^4.2.1",
     "razorpay": "^2.9.2",
     "socket.io": "^4.7.4",
     "uuid": "^9.0.1"

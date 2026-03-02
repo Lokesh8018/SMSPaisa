@@ -2,15 +2,21 @@ package com.smspaisa.app.ui.screens.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.smspaisa.app.R
+import com.smspaisa.app.ui.components.FloatingSupportButton
+import com.smspaisa.app.ui.components.LottieLoading
 import com.smspaisa.app.viewmodel.ProfileUiState
 import com.smspaisa.app.viewmodel.ProfileViewModel
 
@@ -49,7 +55,9 @@ fun ProfileScreen(
         )
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Profile & Settings") },
@@ -57,22 +65,23 @@ fun ProfileScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(false, onNavigateToHome, { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
-                NavigationBarItem(false, onNavigateToStats, { Icon(Icons.Default.BarChart, null) }, label = { Text("Stats") })
-                NavigationBarItem(false, onNavigateToWithdraw, { Icon(Icons.Default.AccountBalanceWallet, null) }, label = { Text("Withdraw") })
-                NavigationBarItem(true, {}, { Icon(Icons.Default.Person, null) }, label = { Text("Profile") })
+            NavigationBar(containerColor = Color.Transparent) {
+                NavigationBarItem(false, onNavigateToHome, { Icon(painterResource(R.drawable.ic_nav_home), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Home") })
+                NavigationBarItem(false, onNavigateToStats, { Icon(painterResource(R.drawable.ic_nav_stats), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Stats") })
+                NavigationBarItem(false, onNavigateToWithdraw, { Icon(painterResource(R.drawable.ic_nav_withdraw), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Withdraw") })
+                NavigationBarItem(true, {}, { Icon(painterResource(R.drawable.ic_nav_profile), null, modifier = androidx.compose.ui.Modifier.size(24.dp)) }, label = { Text("Profile") })
             }
         }
     ) { paddingValues ->
         when (val state = uiState) {
             is ProfileUiState.Loading -> {
                 Box(Modifier.fillMaxSize().padding(paddingValues), Alignment.Center) {
-                    CircularProgressIndicator()
+                    LottieLoading()
                 }
             }
             is ProfileUiState.Success -> {
@@ -86,8 +95,9 @@ fun ProfileScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -100,14 +110,14 @@ fun ProfileScreen(
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(
-                                            text = state.user.name.firstOrNull()?.uppercaseChar()?.toString() ?: "U",
+                                            text = state.user.name?.firstOrNull()?.uppercaseChar()?.toString() ?: "U",
                                             style = MaterialTheme.typography.headlineSmall.copy(color = MaterialTheme.colorScheme.onPrimary)
                                         )
                                     }
                                 }
                                 Spacer(Modifier.width(16.dp))
                                 Column {
-                                    Text(state.user.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                    Text(state.user.name ?: "User", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                                     Text(state.user.phone, style = MaterialTheme.typography.bodySmall)
                                     state.user.email?.let {
                                         Text(it, style = MaterialTheme.typography.bodySmall)
@@ -122,7 +132,11 @@ fun ProfileScreen(
                         Text("SMS Settings", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                     }
                     item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
                             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 // Daily limit slider
                                 Column {
@@ -197,11 +211,15 @@ fun ProfileScreen(
                         Text("Payment & Referral", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                     }
                     item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
                             Column {
                                 ListItem(
                                     headlineContent = { Text("My Referral Code") },
-                                    supportingContent = { Text(state.user.referralCode) },
+                                    supportingContent = { Text(state.user.referralCode.ifEmpty { "N/A" }) },
                                     leadingContent = { Icon(Icons.Default.CardGiftcard, null) },
                                     trailingContent = {
                                         TextButton(onClick = onNavigateToReferral) { Text("View") }
@@ -237,5 +255,15 @@ fun ProfileScreen(
                 }
             }
         }
+    }
+    // Floating support button - positioned at bottom end
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(end = 16.dp, bottom = 96.dp),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        FloatingSupportButton()
+    }
     }
 }

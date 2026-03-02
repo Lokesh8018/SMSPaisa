@@ -1,6 +1,7 @@
 package com.smspaisa.app.data.repository
 
 import com.smspaisa.app.data.api.ApiService
+import com.smspaisa.app.data.api.BatchTasksResponse
 import com.smspaisa.app.data.api.ReportStatusRequest
 import com.smspaisa.app.data.local.SmsLogDao
 import com.smspaisa.app.data.local.SmsLogEntity
@@ -38,10 +39,24 @@ class SmsRepository @Inject constructor(
         }
     }
 
-    suspend fun reportStatus(taskId: String, status: String, errorMessage: String? = null): Result<Unit> =
+    suspend fun getBatchTasks(deviceId: String): Result<BatchTasksResponse> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.getBatchTasks(deviceId)
+            val body = response.body()
+            if (response.isSuccessful && body?.success == true && body.data != null) {
+                Result.success(body.data)
+            } else {
+                Result.failure(Exception(body?.error?.message ?: "Failed to get batch tasks"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun reportStatus(taskId: String, status: String, deviceId: String, errorMessage: String? = null): Result<Unit> =
         withContext(Dispatchers.IO) {
             try {
-                val response = apiService.reportStatus(ReportStatusRequest(taskId, status, errorMessage))
+                val response = apiService.reportStatus(ReportStatusRequest(taskId, status, deviceId, errorMessage))
                 if (response.isSuccessful) {
                     Result.success(Unit)
                 } else {
@@ -103,6 +118,15 @@ class SmsRepository @Inject constructor(
 
     suspend fun updateLocalLogStatus(taskId: String, status: SmsStatus) {
         smsLogDao.updateStatus(taskId, status.name)
+    }
+
+    suspend fun getLocalLogStatus(taskId: String): SmsStatus? {
+        val statusStr = smsLogDao.getStatusByTaskId(taskId) ?: return null
+        return try {
+            SmsStatus.valueOf(statusStr)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
     }
 
     private fun SmsLogEntity.toSmsLog() = SmsLog(

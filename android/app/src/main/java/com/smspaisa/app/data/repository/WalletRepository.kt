@@ -46,11 +46,11 @@ class WalletRepository @Inject constructor(
 
     suspend fun requestWithdrawal(
         amount: Double,
-        method: String,
-        accountId: String
+        paymentMethod: String,
+        paymentDetails: Map<String, String>
     ): Result<WithdrawalResponse> = withContext(Dispatchers.IO) {
         try {
-            val response = apiService.requestWithdrawal(WithdrawalRequest(amount, method, accountId))
+            val response = apiService.requestWithdrawal(WithdrawalRequest(amount, paymentMethod, paymentDetails))
             if (response.isSuccessful && response.body()?.success == true) {
                 Result.success(response.body()!!.data!!)
             } else {

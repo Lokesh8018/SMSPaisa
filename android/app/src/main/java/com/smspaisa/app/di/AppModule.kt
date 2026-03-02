@@ -2,6 +2,8 @@ package com.smspaisa.app.di
 
 import android.content.Context
 import androidx.room.Room
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.smspaisa.app.data.api.ApiClient
 import com.smspaisa.app.data.api.ApiService
 import com.smspaisa.app.data.api.AuthInterceptor
@@ -35,14 +37,23 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideGson(): Gson {
+        return GsonBuilder()
+            .setLenient() // handles edge cases in JSON parsing for nested generic types
+            .serializeNulls() // ensures null fields in Kotlin data classes with default values are serialized
+            .create()
+    }
+
+    @Provides
+    @Singleton
     fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         return ApiClient.provideOkHttpClient(authInterceptor)
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        return ApiClient.provideRetrofit(okHttpClient)
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
+        return ApiClient.provideRetrofit(okHttpClient, gson)
     }
 
     @Provides

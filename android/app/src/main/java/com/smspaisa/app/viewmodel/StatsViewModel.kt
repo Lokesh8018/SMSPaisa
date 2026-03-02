@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.smspaisa.app.utils.toUserMessage
 import javax.inject.Inject
 
 sealed class StatsUiState {
@@ -54,7 +55,8 @@ class StatsViewModel @Inject constructor(
                 val (daily, weekly, monthly) = when (period) {
                     StatsPeriod.DAILY -> {
                         val d = apiService.getDailyStats().body()?.data
-                        Triple(d, null, null)
+                        val w = apiService.getWeeklyStats().body()?.data
+                        Triple(d, w, null)
                     }
                     StatsPeriod.WEEKLY -> {
                         val w = apiService.getWeeklyStats().body()?.data
@@ -74,7 +76,7 @@ class StatsViewModel @Inject constructor(
                     selectedPeriod = period
                 )
             } catch (e: Exception) {
-                _uiState.value = StatsUiState.Error(e.message ?: "Failed to load stats")
+                _uiState.value = StatsUiState.Error(e.toUserMessage())
             }
         }
     }
