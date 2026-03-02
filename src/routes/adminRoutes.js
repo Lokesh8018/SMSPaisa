@@ -7,6 +7,7 @@ const {
   listSmsLogs, deleteUser, listTransactions,
   getAdminPlatformSettings, updateAdminPlatformSettings,
   updateTaskStatus, getAdminWeeklyChart,
+  listReferrals, forcePayReferralBonus,
 } = require('../controllers/adminController');
 const { updateAppVersion } = require('../controllers/appController');
 const { authenticate, requireAdmin } = require('../middleware/auth');
@@ -35,5 +36,7 @@ router.put('/settings', validate(schemas.updateSettings), updateAdminPlatformSet
 router.patch('/tasks/:taskId/status', validate(schemas.updateTaskStatus), updateTaskStatus);
 router.put('/app/version', updateAppVersion);
 router.get('/chart/weekly', getAdminWeeklyChart);
+router.get('/referrals', listReferrals);
+router.post('/referrals/:referralId/force-pay', forcePayReferralBonus);
 
 module.exports = router;

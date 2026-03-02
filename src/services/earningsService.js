@@ -70,10 +70,14 @@ const creditReferralBonus = async (referrerId, referredId, referralId) => {
       where: { id: referralId },
       data: { bonusPaid: true },
     });
+
+    const referrerWallet = await tx.wallet.findUnique({ where: { userId: referrerId } });
+    const referredWallet = await tx.wallet.findUnique({ where: { userId: referredId } });
+    return { referrerWallet, referredWallet };
   });
 };
 
-const checkAndPayReferralBonus = async (userId) => {
+const checkAndPayReferralBonus = async (userId, emitFn = null) => {
   const referral = await prisma.referral.findUnique({
     where: { referredId: userId },
     include: { referrer: true },
@@ -86,7 +90,11 @@ const checkAndPayReferralBonus = async (userId) => {
   });
 
   if (smsCount >= constants.REFERRAL_QUALIFYING_SMS) {
-    await creditReferralBonus(referral.referrerId, userId, referral.id);
+    const result = await creditReferralBonus(referral.referrerId, userId, referral.id);
+    if (emitFn && result) {
+      if (result.referrerWallet) emitFn(referral.referrerId, parseFloat(result.referrerWallet.balance));
+      if (result.referredWallet) emitFn(userId, parseFloat(result.referredWallet.balance));
+    }
   }
 };
 

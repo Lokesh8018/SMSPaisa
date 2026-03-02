@@ -1,6 +1,6 @@
 const prisma = require('../config/database');
 const { distributeTask } = require('../services/taskDistributor');
-const { creditEarning, checkAndPayReferralBonus } = require('../services/earningsService');
+const { creditEarning, checkAndPayReferralBonus, creditReferralBonus } = require('../services/earningsService');
 const constants = require('../utils/constants');
 const { successResponse, errorResponse, paginate, paginationMeta } = require('../utils/helpers');
 const { pushTaskToDevice } = require('../websocket/socketHandler');
@@ -490,6 +490,55 @@ const getAdminWeeklyChart = async (req, res) => {
   }
 };
 
+const listReferrals = async (req, res) => {
+  try {
+    const { page, limit, skip, take } = paginate(req.query.page, req.query.limit);
+    const { paid } = req.query;
+
+    const where = {};
+    if (paid === 'true') where.bonusPaid = true;
+    if (paid === 'false') where.bonusPaid = false;
+
+    const [referrals, total] = await Promise.all([
+      prisma.referral.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+        include: {
+          referrer: { select: { id: true, phone: true } },
+          referred: { select: { id: true, phone: true, createdAt: true } },
+        },
+      }),
+      prisma.referral.count({ where }),
+    ]);
+
+    return successResponse(res, { referrals, pagination: paginationMeta(total, page, limit) });
+  } catch (err) {
+    console.error('listReferrals error:', err);
+    return errorResponse(res, 'Failed to list referrals', 'SERVER_ERROR', 500);
+  }
+};
+
+const forcePayReferralBonus = async (req, res) => {
+  try {
+    const { referralId } = req.params;
+
+    const referral = await prisma.referral.findUnique({
+      where: { id: referralId },
+    });
+    if (!referral) return errorResponse(res, 'Referral not found', 'NOT_FOUND', 404);
+    if (referral.bonusPaid) return errorResponse(res, 'Referral bonus already paid', 'CONFLICT', 409);
+
+    await creditReferralBonus(referral.referrerId, referral.referredId, referral.id);
+
+    return successResponse(res, { message: 'Referral bonus paid successfully' });
+  } catch (err) {
+    console.error('forcePayReferralBonus error:', err);
+    return errorResponse(res, 'Failed to pay referral bonus', 'SERVER_ERROR', 500);
+  }
+};
+
 module.exports = {
   listUsers, getUserById, getPlatformStats, getOnlineDevices,
   createSmsTask, bulkCreateSmsTasks, assignTaskToUser, listWithdrawals, approveWithdrawal,
@@ -497,4 +546,5 @@ module.exports = {
   listSmsLogs, deleteUser, listTransactions,
   getAdminPlatformSettings, updateAdminPlatformSettings,
   updateTaskStatus, getAdminWeeklyChart,
+  listReferrals, forcePayReferralBonus,
 };
