@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const prisma = require('../config/database');
-const { removeAssignedTask } = require('../services/smsQueueService');
+const { removeAssignedTask, enqueueTask } = require('../services/smsQueueService');
 
 const startStaleTaskCleanup = () => {
   // Runs at minute 0 of every hour — resets stale ASSIGNED tasks (stuck for >5 minutes) back to QUEUED
@@ -18,6 +18,7 @@ const startStaleTaskCleanup = () => {
         });
         for (const task of staleTasks) {
           await removeAssignedTask(task.id);
+          await enqueueTask(task.id, 0); // re-enqueue with default priority
         }
         console.log(`Stale task cleanup: reset ${staleTasks.length} task(s) to QUEUED`);
       }
