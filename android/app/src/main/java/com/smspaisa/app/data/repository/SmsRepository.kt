@@ -13,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -136,8 +135,8 @@ class SmsRepository @Inject constructor(
         recipient = recipient,
         message = message,
         status = SmsStatus.valueOf(status),
-        amountEarned = amount,
-        createdAt = Instant.ofEpochMilli(timestamp).toString()
+        amount = amount,
+        timestamp = timestamp
     )
 
     private fun SmsLog.toEntity() = SmsLogEntity(
@@ -146,11 +145,7 @@ class SmsRepository @Inject constructor(
         recipient = recipient,
         message = message,
         status = status.name,
-        amount = amountEarned,
-        timestamp = try {
-            Instant.parse(createdAt).toEpochMilli()
-        } catch (_: Exception) {
-            System.currentTimeMillis()
-        }
+        amount = amount,
+        timestamp = timestamp
     )
 }

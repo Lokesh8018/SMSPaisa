@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const prisma = require('../config/database');
-const { removeAssignedTask, enqueueTask } = require('../services/smsQueueService');
+const { enqueueTask } = require('../services/smsQueueService');
 
 const startStaleTaskCleanup = () => {
   // Runs at minute 0 of every hour — resets stale ASSIGNED tasks (stuck for >5 minutes) back to QUEUED
@@ -17,7 +17,6 @@ const startStaleTaskCleanup = () => {
           data: { status: 'QUEUED', assignedToId: null, assignedDeviceId: null, assignedAt: null },
         });
         for (const task of staleTasks) {
-          await removeAssignedTask(task.id);
           await enqueueTask(task.id, 0); // re-enqueue with default priority
         }
         console.log(`Stale task cleanup: reset ${staleTasks.length} task(s) to QUEUED`);
@@ -27,15 +26,15 @@ const startStaleTaskCleanup = () => {
     }
   });
 
-  // Runs at midnight IST (Asia/Kolkata) — resets daily SMS counters on all devices
-  cron.schedule('0 0 * * *', async () => {
+  // Runs at 18:30 UTC (midnight IST) — resets daily SMS counters on all devices
+  cron.schedule('30 18 * * *', async () => {
     try {
       const result = await prisma.device.updateMany({ data: { smsSentToday: 0 } });
       console.log(`Daily reset: cleared smsSentToday for ${result.count} device(s)`);
     } catch (err) {
       console.error('Daily device reset error:', err);
     }
-  }, { timezone: 'Asia/Kolkata' });
+  });
 };
 
 module.exports = { startStaleTaskCleanup };
