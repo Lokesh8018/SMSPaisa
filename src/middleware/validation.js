@@ -105,6 +105,21 @@ const schemas = {
   updateTaskStatus: Joi.object({
     status: Joi.string().valid('SENT', 'DELIVERED', 'FAILED').required(),
   }),
+
+  forgotPassword: Joi.object({
+    phone: Joi.string().required(),
+    deviceId: Joi.string().required(),
+  }),
+
+  resetPassword: Joi.object({
+    resetToken: Joi.string().uuid().required(),
+    newPassword: Joi.string().min(6).required(),
+  }),
+
+  changePassword: Joi.object({
+    currentPassword: Joi.string().required(),
+    newPassword: Joi.string().min(6).required(),
+  }),
 };
 
 module.exports = { validate, schemas };

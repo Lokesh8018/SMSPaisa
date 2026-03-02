@@ -86,6 +86,24 @@ data class ApplyReferralRequest(
 )
 
 @Keep
+data class ForgotPasswordRequest(
+    @SerializedName("phone") val phone: String,
+    @SerializedName("deviceId") val deviceId: String
+)
+
+@Keep
+data class ResetPasswordRequest(
+    @SerializedName("resetToken") val resetToken: String,
+    @SerializedName("newPassword") val newPassword: String
+)
+
+@Keep
+data class ChangePasswordRequest(
+    @SerializedName("currentPassword") val currentPassword: String,
+    @SerializedName("newPassword") val newPassword: String
+)
+
+@Keep
 data class AppVersionResponse(
     @SerializedName("latestVersion") val latestVersion: String,
     @SerializedName("minVersion") val minVersion: String,
@@ -116,6 +134,12 @@ data class BatchTasksResponse(
 data class AuthResponse(
     @SerializedName("token") val token: String,
     @SerializedName("user") val user: User
+)
+
+@Keep
+data class ForgotPasswordResponse(
+    @SerializedName("resetToken") val resetToken: String,
+    @SerializedName("expiresIn") val expiresIn: Int
 )
 
 @Keep
@@ -180,6 +204,15 @@ interface ApiService {
 
     @PUT("api/auth/profile")
     suspend fun updateProfile(@Body request: UpdateProfileRequest): Response<ApiResponse<User>>
+
+    @POST("api/auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ApiResponse<ForgotPasswordResponse>>
+
+    @POST("api/auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ApiResponse<Unit>>
+
+    @PUT("api/auth/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): Response<ApiResponse<Unit>>
 
     // --- SMS Tasks ---
 

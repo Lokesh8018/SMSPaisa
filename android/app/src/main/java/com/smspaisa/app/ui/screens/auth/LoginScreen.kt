@@ -21,6 +21,7 @@ import com.smspaisa.app.viewmodel.AuthViewModel
 fun LoginScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit = {},
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     var phoneNumber by remember { mutableStateOf("") }
@@ -125,6 +126,10 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
         TextButton(onClick = onNavigateToRegister) {
             Text("Don't have an account? Register")
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        TextButton(onClick = onNavigateToForgotPassword) {
+            Text("Forgot Password?")
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
