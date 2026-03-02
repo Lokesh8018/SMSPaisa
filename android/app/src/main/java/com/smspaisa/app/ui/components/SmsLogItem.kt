@@ -17,6 +17,7 @@ import com.smspaisa.app.model.SmsLog
 import com.smspaisa.app.model.SmsStatus
 import com.smspaisa.app.ui.theme.*
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.*
 
 @Composable
@@ -70,7 +71,7 @@ fun SmsLogItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = formatTimestamp(smsLog.timestamp),
+                    text = formatTimestamp(smsLog.createdAt),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                 )
@@ -78,7 +79,7 @@ fun SmsLogItem(
             Spacer(modifier = Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "+₹%.2f".format(smsLog.amount),
+                    text = "+₹%.2f".format(smsLog.amountEarned),
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.secondary
@@ -100,7 +101,11 @@ fun SmsLogItem(
     }
 }
 
-private fun formatTimestamp(timestamp: Long): String {
-    val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-    return sdf.format(Date(timestamp))
+private fun formatTimestamp(createdAt: String): String {
+    return try {
+        val date = Date.from(Instant.parse(createdAt))
+        SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(date)
+    } catch (e: Exception) {
+        createdAt
+    }
 }
