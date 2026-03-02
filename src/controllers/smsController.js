@@ -163,8 +163,8 @@ const getSmsLog = async (req, res) => {
       recipient: log.task?.recipient || '',
       message: log.task?.message || '',
       status: log.status,
-      amount: parseFloat(log.amountEarned) || 0,
-      timestamp: new Date(log.createdAt).getTime(),
+      amountEarned: parseFloat(log.amountEarned) || 0,
+      createdAt: log.createdAt,
     }));
 
     return successResponse(res, flatLogs);

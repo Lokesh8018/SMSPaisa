@@ -29,6 +29,8 @@ class UserPreferences @Inject constructor(
         val STOP_BATTERY_PERCENT = intPreferencesKey("stop_battery_percent")
         val PREFERRED_SIM = intPreferencesKey("preferred_sim")
         val WIFI_ONLY = booleanPreferencesKey("wifi_only")
+        val ACTIVE_HOURS_START = stringPreferencesKey("active_hours_start")
+        val ACTIVE_HOURS_END = stringPreferencesKey("active_hours_end")
     }
 
     val authToken: Flow<String?> = dataStore.data.map { it[AUTH_TOKEN] }
@@ -41,6 +43,8 @@ class UserPreferences @Inject constructor(
     val stopBatteryPercent: Flow<Int> = dataStore.data.map { it[STOP_BATTERY_PERCENT] ?: 20 }
     val preferredSim: Flow<Int> = dataStore.data.map { it[PREFERRED_SIM] ?: 0 }
     val wifiOnly: Flow<Boolean> = dataStore.data.map { it[WIFI_ONLY] ?: false }
+    val activeHoursStart: Flow<String> = dataStore.data.map { it[ACTIVE_HOURS_START] ?: "08:00" }
+    val activeHoursEnd: Flow<String> = dataStore.data.map { it[ACTIVE_HOURS_END] ?: "22:00" }
 
     suspend fun saveAuthToken(token: String) {
         dataStore.edit { it[AUTH_TOKEN] = token }
