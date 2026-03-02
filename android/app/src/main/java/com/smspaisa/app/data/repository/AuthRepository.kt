@@ -2,8 +2,12 @@ package com.smspaisa.app.data.repository
 
 import com.smspaisa.app.data.api.ApiService
 import com.smspaisa.app.data.api.AuthResponse
+import com.smspaisa.app.data.api.ChangePasswordRequest
+import com.smspaisa.app.data.api.ForgotPasswordRequest
+import com.smspaisa.app.data.api.ForgotPasswordResponse
 import com.smspaisa.app.data.api.LoginRequest
 import com.smspaisa.app.data.api.RegisterRequest
+import com.smspaisa.app.data.api.ResetPasswordRequest
 import com.smspaisa.app.data.api.UpdateProfileRequest
 import com.smspaisa.app.data.datastore.UserPreferences
 import com.smspaisa.app.model.User
@@ -88,4 +92,46 @@ class AuthRepository @Inject constructor(
     suspend fun logout() {
         userPreferences.clearAll()
     }
+
+    suspend fun forgotPassword(request: ForgotPasswordRequest): Result<ForgotPasswordResponse> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.forgotPassword(request)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Result.success(response.body()!!.data!!)
+                } else {
+                    Result.failure(Exception(response.body()?.error?.message ?: "Failed"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    suspend fun resetPassword(request: ResetPasswordRequest): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.resetPassword(request)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception(response.body()?.error?.message ?: "Failed"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    suspend fun changePassword(request: ChangePasswordRequest): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.changePassword(request)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception(response.body()?.error?.message ?: "Failed"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
 }

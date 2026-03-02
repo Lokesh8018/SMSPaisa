@@ -23,6 +23,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.smspaisa.app.ui.components.LottieLoading
 import com.smspaisa.app.ui.components.UpdateDialog
+import com.smspaisa.app.ui.screens.auth.ForgotPasswordScreen
 import com.smspaisa.app.ui.screens.auth.LoginScreen
 import com.smspaisa.app.ui.screens.auth.RegisterScreen
 import com.smspaisa.app.ui.screens.home.HomeScreen
@@ -39,6 +40,7 @@ sealed class Screen(val route: String) {
     object Onboarding : Screen("onboarding")
     object Login : Screen("login")
     object Register : Screen("register")
+    object ForgotPassword : Screen("forgot_password")
     object Home : Screen("home")
     object Stats : Screen("stats")
     object Withdraw : Screen("withdraw")
@@ -119,7 +121,21 @@ fun NavGraph(
                 },
                 onNavigateToRegister = {
                     navController.navigate(Screen.Register.route)
+                },
+                onNavigateToForgotPassword = {
+                    navController.navigate(Screen.ForgotPassword.route)
                 }
+            )
+        }
+
+        composable(Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(
+                onPasswordResetSuccess = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.ForgotPassword.route) { inclusive = true }
+                    }
+                },
+                onBackClick = { navController.popBackStack() }
             )
         }
 
