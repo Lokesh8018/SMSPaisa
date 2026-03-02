@@ -70,7 +70,7 @@ class WebSocketManager @Inject constructor() {
                     return@on
                 }
                 val task = SmsTask(
-                    taskId = taskId,
+                    id = taskId,
                     recipient = recipient,
                     message = message,
                     priority = data.optInt("priority", 1)
