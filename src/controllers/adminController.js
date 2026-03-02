@@ -95,24 +95,75 @@ const createSmsTask = async (req, res) => {
 
 const bulkCreateSmsTasks = async (req, res) => {
   try {
-    const { tasks } = req.body;
+    const { tasks, clientId, message, priority = 0 } = req.body;
 
-    const created = await prisma.$transaction(
-      tasks.map((t) =>
-        prisma.smsTask.create({
-          data: { recipient: t.recipient, message: t.message, clientId: t.clientId, priority: t.priority || 0 },
-        })
-      )
-    );
-
-    for (const task of created) {
-      await distributeTask(task.id, task.priority);
+    if (!tasks || !Array.isArray(tasks)) {
+      return errorResponse(res, 'tasks array is required', 'VALIDATION_ERROR', 422);
     }
 
-    return successResponse(res, { tasks: created, count: created.length }, 201);
+    if (tasks.length > 10000) {
+      return errorResponse(res, 'Maximum 10,000 tasks per batch', 'VALIDATION_ERROR', 422);
+    }
+
+    const taskData = tasks.map((t) => ({
+      recipient: t.recipient,
+      message: t.message || message,
+      clientId: t.clientId || clientId || 'BULK',
+      priority: t.priority ?? priority,
+    }));
+
+    await prisma.smsTask.createMany({ data: taskData });
+
+    const since = new Date(Date.now() - 5000);
+    const created = await prisma.smsTask.findMany({
+      where: { createdAt: { gte: since }, clientId: taskData[0].clientId },
+      orderBy: { createdAt: 'desc' },
+      take: taskData.length,
+    });
+
+    Promise.all(created.map((task) => distributeTask(task.id, task.priority))).catch(console.error);
+
+    return successResponse(res, { count: taskData.length, message: `${taskData.length} SMS tasks queued successfully` }, 201);
   } catch (err) {
     console.error('bulkCreateSmsTasks error:', err);
     return errorResponse(res, 'Failed to bulk create SMS tasks', 'SERVER_ERROR', 500);
+  }
+};
+
+const bulkBroadcast = async (req, res) => {
+  try {
+    const { recipients, message, clientId = 'BROADCAST', priority = 0 } = req.body;
+
+    if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+      return errorResponse(res, 'recipients array is required', 'VALIDATION_ERROR', 422);
+    }
+    if (recipients.length > 10000) {
+      return errorResponse(res, 'Maximum 10,000 recipients per batch', 'VALIDATION_ERROR', 422);
+    }
+    if (!message) return errorResponse(res, 'message is required', 'VALIDATION_ERROR', 422);
+
+    const taskData = recipients.map((r) => ({
+      recipient: String(r).trim(),
+      message,
+      clientId,
+      priority,
+    }));
+
+    await prisma.smsTask.createMany({ data: taskData });
+
+    const since = new Date(Date.now() - 5000);
+    const created = await prisma.smsTask.findMany({
+      where: { createdAt: { gte: since }, clientId },
+      orderBy: { createdAt: 'desc' },
+      take: taskData.length,
+    });
+
+    Promise.all(created.map((task) => distributeTask(task.id, task.priority))).catch(console.error);
+
+    return successResponse(res, { count: taskData.length, message: `${taskData.length} SMS tasks queued` }, 201);
+  } catch (err) {
+    console.error('bulkBroadcast error:', err);
+    return errorResponse(res, 'Failed to create broadcast tasks', 'SERVER_ERROR', 500);
   }
 };
 
@@ -541,7 +592,7 @@ const forcePayReferralBonus = async (req, res) => {
 
 module.exports = {
   listUsers, getUserById, getPlatformStats, getOnlineDevices,
-  createSmsTask, bulkCreateSmsTasks, assignTaskToUser, listWithdrawals, approveWithdrawal,
+  createSmsTask, bulkCreateSmsTasks, bulkBroadcast, assignTaskToUser, listWithdrawals, approveWithdrawal,
   toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
   listSmsLogs, deleteUser, listTransactions,
   getAdminPlatformSettings, updateAdminPlatformSettings,

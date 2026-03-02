@@ -87,7 +87,14 @@ const schemas = {
         clientId: Joi.string().required(),
         priority: Joi.number().integer().min(0).default(0),
       })
-    ).min(1).required(),
+    ).min(1).max(10000).required(),
+  }),
+
+  bulkBroadcast: Joi.object({
+    recipients: Joi.array().items(Joi.string().required()).min(1).max(10000).required(),
+    message: Joi.string().min(1).max(160).required(),
+    clientId: Joi.string().optional().default('BROADCAST'),
+    priority: Joi.number().integer().min(0).default(0),
   }),
 
   assignTask: Joi.object({
