@@ -75,7 +75,7 @@ const getWithdrawalHistory = async (req, res) => {
       prisma.transaction.count({ where: { userId: req.user.id, type: 'WITHDRAWAL' } }),
     ]);
 
-    return successResponse(res, transactions);
+    return successResponse(res, { transactions, pagination: paginationMeta(total, page, limit) });
   } catch (err) {
     console.error('getWithdrawalHistory error:', err);
     return errorResponse(res, 'Failed to get withdrawal history', 'SERVER_ERROR', 500);

@@ -65,7 +65,7 @@ const updateDeviceSettings = async (req, res) => {
 
 const heartbeat = async (req, res) => {
   try {
-    const { deviceId, isOnline = true } = req.body;
+    const { deviceId, isOnline = true, batteryLevel, isCharging, networkType } = req.body;
 
     const device = await prisma.device.findFirst({
       where: { deviceId, userId: req.user.id },
@@ -74,9 +74,14 @@ const heartbeat = async (req, res) => {
       return errorResponse(res, 'Device not found', 'NOT_FOUND', 404);
     }
 
+    const updateData = { isOnline, lastSeen: new Date() };
+    if (batteryLevel !== undefined) updateData.batteryLevel = batteryLevel;
+    if (isCharging !== undefined) updateData.isCharging = isCharging;
+    if (networkType !== undefined) updateData.networkType = networkType;
+
     await prisma.device.update({
       where: { id: device.id },
-      data: { isOnline, lastSeen: new Date() },
+      data: updateData,
     });
 
     return successResponse(res, { message: 'Heartbeat received', deviceId, isOnline });

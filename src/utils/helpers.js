@@ -29,12 +29,17 @@ const errorResponse = (res, message, code = 'ERROR', statusCode = 400) => {
 };
 
 const isWithinActiveHours = (startTime, endTime) => {
+  if (!startTime || !endTime) return true; // No restriction set
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const [startH, startM] = startTime.split(':').map(Number);
   const [endH, endM] = endTime.split(':').map(Number);
   const startMinutes = startH * 60 + startM;
   const endMinutes = endH * 60 + endM;
+  if (endMinutes < startMinutes) {
+    // Overnight window e.g. 22:00 - 06:00
+    return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+  }
   return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
 };
 
