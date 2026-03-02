@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   listUsers, getUserById, getPlatformStats, getOnlineDevices,
-  createSmsTask, bulkCreateSmsTasks, assignTaskToUser, listWithdrawals, approveWithdrawal,
+  createSmsTask, bulkCreateSmsTasks, bulkBroadcast, assignTaskToUser, listWithdrawals, approveWithdrawal,
   toggleUserActive, changeUserRole, rejectWithdrawal, listSmsTasks,
   listSmsLogs, deleteUser, listTransactions,
   getAdminPlatformSettings, updateAdminPlatformSettings,
@@ -24,6 +24,7 @@ router.get('/stats', getPlatformStats);
 router.get('/devices', getOnlineDevices);
 router.post('/sms/create-task', validate(schemas.createTask), createSmsTask);
 router.post('/sms/bulk-create', validate(schemas.bulkCreateTask), bulkCreateSmsTasks);
+router.post('/sms/bulk-broadcast', validate(schemas.bulkBroadcast), bulkBroadcast);
 router.post('/sms/assign-task', validate(schemas.assignTask), assignTaskToUser);
 router.get('/sms/tasks', listSmsTasks);
 router.get('/sms/logs', listSmsLogs);
